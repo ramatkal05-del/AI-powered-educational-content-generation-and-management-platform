@@ -1,4 +1,4 @@
-﻿from django.contrib.auth.models import AbstractUser
+from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
@@ -301,19 +301,4 @@ def get_client_ip(request):
         return x_forwarded_for.split(',')[0].strip()
     return request.META.get('REMOTE_ADDR')
 
-
-# Signal handlers for automatic activity logging
-from django.db.models.signals import post_save
-from django.dispatch import receiver
-
-
-@receiver(post_save, sender=CustomUser)
-def create_user_activity_on_signup(sender, instance, created, **kwargs):
-    """Log account creation activity"""
-    if created:
-        log_user_activity(
-            user=instance,
-            activity_type='account_created',
-            description=f'Account created for {instance.get_full_name()}'
-        )
 

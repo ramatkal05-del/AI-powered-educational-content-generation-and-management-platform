@@ -1,232 +1,241 @@
-<!-- Logo and Title -->
-<div class="flex items-center flex-shrink-0 px-6 mb-8">
-    <div class="flex items-center">
-        <!-- Logo -->
-        <div class="flex items-center justify-center w-12 h-12">
-            <img src="{% load static %}{% static 'images/logo-icon-pro.svg' %}" alt="DidactAI Logo" class="w-12 h-12">
+{% load static %}
+<!-- Academia Sidebar Content — Navigation Menu -->
+
+<!-- ── Logo ── -->
+<div class="flex items-center flex-shrink-0 px-5 mb-6">
+    <a href="{% url 'core:dashboard' %}" class="flex items-center gap-3 group focus-visible:outline-none">
+        <div class="flex items-center justify-center w-10 h-10 rounded flex-shrink-0"
+             style="background: linear-gradient(180deg, #D4B872 0%, #B8953F 100%); box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 2px 4px rgba(0,0,0,0.3);">
+            <img src="{% static 'images/logo-icon-pro.svg' %}" alt="DidactAI Logo" class="w-6 h-6" 
+                 style="filter: brightness(0.1);">
         </div>
-        <div class="ml-3">
-            <h1 class="text-lg font-semibold text-gray-900">DidactAI</h1>
-            <p class="text-xs text-gray-500">AI Education Platform</p>
+        <div>
+            <h1 class="text-base leading-none" 
+                style="font-family: 'Cinzel', serif; color: #E8DFD4; letter-spacing: 0.1em; text-shadow: 1px 1px 1px rgba(0,0,0,0.4);">
+                DidactAI
+            </h1>
+            <p class="text-xs mt-0.5 leading-none" 
+               style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: #C9A962;">
+                Academia
+            </p>
         </div>
-    </div>
+    </a>
 </div>
 
-<!-- Navigation -->
-<nav class="flex-1 px-3 space-y-1 overflow-y-auto custom-scrollbar">
+<!-- Ornate divider below logo -->
+<div class="ornate-divider on-card mx-5 mb-5" aria-hidden="true" style="background: linear-gradient(90deg, transparent 0%, #4A3F35 40%, #C9A962 50%, #4A3F35 60%, transparent 100%);"></div>
+
+<!-- ── Navigation ── -->
+<nav class="flex-1 px-3 space-y-0.5 overflow-y-auto" 
+     style="scrollbar-width: thin; scrollbar-color: #3D332B #251E19;"
+     aria-label="Primary navigation">
+
+    {% comment %} Volume I — Core {% endcomment %}
+    <p class="label-cinzel px-3 pb-2 pt-1" style="font-size: 0.5rem; letter-spacing: 0.3em;">Volume I — Core</p>
+    
     <!-- Dashboard -->
     <a href="{% url 'core:dashboard' %}" 
-       class="{% if request.resolver_match.url_name == 'dashboard' %}bg-primary-50 border-r-2 border-primary-600 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-        <svg class="{% if request.resolver_match.url_name == 'dashboard' %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m7 7 5-3 5 3"></path>
+       class="sidebar-link group flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if request.resolver_match.url_name == 'dashboard' %}sidebar-link-active{% endif %}"
+       aria-current="{% if request.resolver_match.url_name == 'dashboard' %}page{% endif %}">
+        <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
         </svg>
-        Dashboard
+        <span class="sidebar-link-text text-sm">Dashboard</span>
     </a>
 
-    <!-- Courses -->
+    <!-- Courses section -->
     <div x-data="{ open: {% if 'courses' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
         <button @click="open = !open" 
-                class="{% if 'courses' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'courses' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.746 0 3.332.477 4.5 1.253v13C19.832 18.477 18.246 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path>
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'courses' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.966 8.966 0 00-6 2.292m0-14.25v14.25"/>
             </svg>
-            Courses
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">Courses</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'courses:list' %}" class="{% if request.resolver_match.url_name == 'courses:list' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                All Courses
-            </a>
-            <a href="{% url 'courses:create' %}" class="{% if request.resolver_match.url_name == 'courses:create' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Create Course
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'courses:list' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'list' %}sidebar-sublink-active{% endif %}">All Courses</a>
+            <a href="{% url 'courses:create' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'create' %}sidebar-sublink-active{% endif %}">Create Course</a>
         </div>
     </div>
 
-    <!-- File Management -->
+    <!-- Files section -->
     <div x-data="{ open: {% if 'uploads' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
-        <button @click="open = !open" 
-                class="{% if 'uploads' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'uploads' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path>
+        <button @click="open = !open"
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'uploads' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 14.25v-2.625a3.375 3.375 0 00-3.375-3.375h-1.5A1.125 1.125 0 0113.5 7.125v-1.5a3.375 3.375 0 00-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 00-9-9z"/>
             </svg>
-            Files
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">Files</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'uploads:list' %}" class="{% if request.resolver_match.url_name == 'uploads:list' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                My Files
-            </a>
-            <a href="{% url 'uploads:upload' %}" class="{% if request.resolver_match.url_name == 'uploads:upload' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Upload Files
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'uploads:list' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'list' %}sidebar-sublink-active{% endif %}">My Files</a>
+            <a href="{% url 'uploads:upload' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'upload' %}sidebar-sublink-active{% endif %}">Upload Files</a>
         </div>
     </div>
 
-    <!-- AI Generator -->
+    <!-- Volume II — AI Tools -->
+    <div class="pt-3">
+        <p class="label-cinzel px-3 pb-2" style="font-size: 0.5rem; letter-spacing: 0.3em;">Volume II — AI Tools</p>
+    </div>
+
+    <!-- AI Generator section -->
     <div x-data="{ open: {% if 'ai_generator' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
-        <button @click="open = !open" 
-                class="{% if 'ai_generator' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'ai_generator' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+        <button @click="open = !open"
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'ai_generator' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.813 15.904L9 18.75l-.813-2.846a4.5 4.5 0 00-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 003.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 003.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 00-3.09 3.09zM18.259 8.715L18 9.75l-.259-1.035a3.375 3.375 0 00-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 002.455-2.456L18 2.25l.259 1.035a3.375 3.375 0 002.456 2.456L21.75 6l-1.035.259a3.375 3.375 0 00-2.456 2.456z"/>
             </svg>
-            AI Generator
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">AI Generator</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'ai_generator:quiz_generator' %}" class="{% if request.resolver_match.url_name == 'quiz_generator' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Generate Quiz
-            </a>
-            <a href="{% url 'ai_generator:exam_generator' %}" class="{% if request.resolver_match.url_name == 'exam_generator' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Generate Exam
-            </a>
-            <a href="{% url 'ai_generator:history' %}" class="{% if request.resolver_match.url_name == 'generation_history' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Generation History
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'ai_generator:quiz_generator' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'quiz_generator' %}sidebar-sublink-active{% endif %}">Generate Quiz</a>
+            <a href="{% url 'ai_generator:exam_generator' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'exam_generator' %}sidebar-sublink-active{% endif %}">Generate Exam</a>
+            <a href="{% url 'ai_generator:history' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'generation_history' %}sidebar-sublink-active{% endif %}">History</a>
         </div>
     </div>
 
-    <!-- Exports -->
+    <!-- Exports section -->
     <div x-data="{ open: {% if 'exports' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
-        <button @click="open = !open" 
-                class="{% if 'exports' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'exports' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+        <button @click="open = !open"
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'exports' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3"/>
             </svg>
-            Exports
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">Exports</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'exports:list' %}" class="{% if request.resolver_match.url_name == 'exports:list' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                My Exports
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'exports:list' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'list' %}sidebar-sublink-active{% endif %}">My Exports</a>
         </div>
     </div>
 
-    <!-- Analytics -->
     {% if user.is_admin %}
+    <!-- Volume III — Analytics -->
+    <div class="pt-3">
+        <p class="label-cinzel px-3 pb-2" style="font-size: 0.5rem; letter-spacing: 0.3em;">Volume III — Analytics</p>
+    </div>
+
     <div x-data="{ open: {% if 'analytics' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
-        <button @click="open = !open" 
-                class="{% if 'analytics' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'analytics' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+        <button @click="open = !open"
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'analytics' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75zM9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
             </svg>
-            Analytics
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">Analytics</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'analytics:dashboard' %}" class="{% if request.resolver_match.url_name == 'analytics:dashboard' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Overview
-            </a>
-            <a href="{% url 'analytics:usage' %}" class="{% if request.resolver_match.url_name == 'analytics:usage' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Usage Stats
-            </a>
-            <a href="{% url 'analytics:users' %}" class="{% if request.resolver_match.url_name == 'analytics:users' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                User Activity
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'analytics:dashboard' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200">Overview</a>
+            <a href="{% url 'analytics:usage' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200">Usage Stats</a>
+            <a href="{% url 'analytics:users' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200">User Activity</a>
         </div>
     </div>
     {% endif %}
 
-    <!-- Divider -->
-    <div class="border-t border-gray-200 my-4"></div>
+    <!-- Volume IV — Account -->
+    <div class="pt-3">
+        <p class="label-cinzel px-3 pb-2" style="font-size: 0.5rem; letter-spacing: 0.3em;">Volume {% if user.is_admin %}IV{% else %}III{% endif %} — Account</p>
+    </div>
 
-    <!-- Settings -->
     <div x-data="{ open: {% if 'accounts' in request.resolver_match.url_name %}true{% else %}false{% endif %} }">
-        <button @click="open = !open" 
-                class="{% if 'accounts' in request.resolver_match.url_name %}bg-primary-50 text-primary-700{% else %}text-gray-700 hover:bg-gray-50{% endif %} group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors">
-            <svg class="{% if 'accounts' in request.resolver_match.url_name %}text-primary-500{% else %}text-gray-400 group-hover:text-gray-500{% endif %} flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+        <button @click="open = !open"
+                class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200 {% if 'accounts' in request.resolver_match.url_name %}sidebar-link-active{% endif %}"
+                :aria-expanded="open.toString()">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 011.37.49l1.296 2.247a1.125 1.125 0 01-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 010 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 01-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 01-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 01-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 01-1.369-.49l-1.297-2.247a1.125 1.125 0 01.26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 010-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 01-.26-1.43l1.297-2.247a1.125 1.125 0 011.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
             </svg>
-            Settings
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
+            <span class="sidebar-link-text flex-1 text-sm text-left">Settings</span>
+            <svg :class="{ 'rotate-90': open }" class="h-3 w-3 flex-shrink-0 transition-transform duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2" style="color: #4A3F35;" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/>
             </svg>
         </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="{% url 'accounts:profile' %}" class="{% if request.resolver_match.url_name == 'profile' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                My Profile
-            </a>
-            <a href="{% url 'accounts:edit_profile' %}" class="{% if request.resolver_match.url_name == 'edit_profile' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Edit Profile
-            </a>
-            <a href="{% url 'accounts:change_password' %}" class="{% if request.resolver_match.url_name == 'change_password' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Change Password
-            </a>
-            <a href="{% url 'accounts:notifications' %}" class="{% if request.resolver_match.url_name == 'notifications' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Notifications
-            </a>
-            <a href="{% url 'accounts:privacy' %}" class="{% if request.resolver_match.url_name == 'privacy' %}bg-primary-100 text-primary-700{% else %}text-gray-600 hover:bg-gray-50{% endif %} group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Privacy
-            </a>
+        <div x-show="open" x-transition:enter="transition ease-out duration-150" x-transition:enter-start="opacity-0 -translate-y-1" x-transition:enter-end="opacity-100 translate-y-0" class="mt-0.5 ml-7 pl-3 space-y-0.5" style="border-left: 1px solid #4A3F35;">
+            <a href="{% url 'accounts:profile' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'profile' %}sidebar-sublink-active{% endif %}">My Profile</a>
+            <a href="{% url 'accounts:edit_profile' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'edit_profile' %}sidebar-sublink-active{% endif %}">Edit Profile</a>
+            <a href="{% url 'accounts:change_password' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'change_password' %}sidebar-sublink-active{% endif %}">Change Password</a>
+            <a href="{% url 'accounts:privacy' %}" class="sidebar-sublink block px-2 py-1.5 rounded text-sm transition-colors duration-200 {% if request.resolver_match.url_name == 'privacy' %}sidebar-sublink-active{% endif %}">Privacy</a>
         </div>
     </div>
 
-    <!-- Help & Support -->
-    <div x-data="{ open: false }">
-        <button @click="open = !open" 
-                class="group w-full flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors text-gray-700 hover:bg-gray-50">
-            <svg class="text-gray-400 group-hover:text-gray-500 flex-shrink-0 -ml-1 mr-3 h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    <div class="pt-3">
+        <a href="mailto:support@didactai.com" class="sidebar-link group w-full flex items-center gap-3 px-3 py-2 rounded transition-all duration-200">
+            <svg class="sidebar-icon h-4 w-4 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z"/>
             </svg>
-            Help & Support
-            <svg :class="{ 'rotate-90': open }" class="ml-auto h-4 w-4 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path>
-            </svg>
-        </button>
-        
-        <div x-show="open" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100" class="mt-1 space-y-1">
-            <a href="mailto:support@didactai.com" class="text-gray-600 hover:bg-gray-50 group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Contact Support
-            </a>
-            <a href="https://docs.didactai.com" target="_blank" class="text-gray-600 hover:bg-gray-50 group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Documentation
-            </a>
-            <a href="#" onclick="alert('Help: \n\n• Dashboard: View your overview\n• Courses: Manage your courses\n• Files: Upload and manage files\n• AI Generator: Create quizzes and exams\n• Exports: Download your content\n• Settings: Manage your profile\n\nFor more help, contact support@didactai.com')" class="text-gray-600 hover:bg-gray-50 group flex items-center pl-11 pr-3 py-2 text-sm font-medium rounded-md">
-                Quick Help
-            </a>
-        </div>
+            <span class="sidebar-link-text text-sm">Help & Support</span>
+        </a>
     </div>
-</nav>
 
-<!-- User Info -->
-<div class="flex-shrink-0 flex border-t border-gray-200 p-4">
-    <div class="flex-shrink-0 w-full group block">
-        <div class="flex items-center">
-            <div>
-                <!-- Avatar -->
-                {% if user.avatar %}
-                    <img class="inline-block h-9 w-9 rounded-full" src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}">
-                {% else %}
-                    <span class="inline-block h-9 w-9 rounded-full bg-primary-600">
-                        <span class="flex h-full w-full items-center justify-center rounded-full bg-primary-500">
-                            <span class="text-sm font-medium leading-none text-white">{{ user.get_full_name|slice:':1'|upper }}</span>
-                        </span>
-                    </span>
-                {% endif %}
-            </div>
-            <div class="ml-3 min-w-0 flex-1">
-                <p class="text-sm font-medium text-gray-700 truncate">{{ user.get_full_name }}</p>
-                <p class="text-xs text-gray-500 truncate">{{ user.institution|default:"DidactAI User" }}</p>
-            </div>
+</nav><!-- /.nav -->
+
+<!-- ── Sidebar bottom: User info ── -->
+<div class="flex-shrink-0 mx-3 mt-4 pt-4" style="border-top: 1px solid #4A3F35;">
+    <div class="flex items-center gap-3 px-2">
+        {% if user.avatar %}
+            <img class="h-8 w-8 rounded-full object-cover flex-shrink-0" 
+                 style="border: 1px solid #4A3F35;"
+                 src="{{ user.avatar.url }}" alt="{{ user.get_full_name }}">
+        {% else %}
+            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full flex-shrink-0"
+                  style="background: linear-gradient(180deg, #D4B872 0%, #B8953F 100%); border: 1px solid #9C8B7A;">
+                <span class="text-xs font-semibold" 
+                      style="font-family: 'Cinzel', serif; color: #1C1714; text-shadow: 1px 1px 1px rgba(0,0,0,0.3);">
+                    {{ user.get_full_name|slice:':1'|upper }}
+                </span>
+            </span>
+        {% endif %}
+        <div class="min-w-0 flex-1">
+            <p class="text-sm truncate leading-none" style="font-family: 'Crimson Pro', serif; color: #E8DFD4;">{{ user.get_full_name }}</p>
+            <p class="text-xs truncate mt-0.5" style="color: #4A3F35; font-family: 'Crimson Pro', serif; font-style: italic;">{{ user.institution|default:"DidactAI User" }}</p>
         </div>
     </div>
 </div>
+
+<!-- Academia sidebar link styles -->
+<style>
+    .sidebar-link {
+        color: #9C8B7A;
+        font-family: 'Crimson Pro', serif;
+    }
+    .sidebar-link:hover {
+        background: rgba(74, 63, 53, 0.3);
+        color: #C9A962;
+    }
+    .sidebar-link:hover .sidebar-icon { color: #C9A962; }
+    .sidebar-link-active {
+        background: rgba(201, 169, 98, 0.1);
+        color: #C9A962;
+        border-left: 2px solid #C9A962;
+        padding-left: calc(0.75rem - 2px);
+    }
+    .sidebar-link-active .sidebar-icon { color: #C9A962; }
+
+    .sidebar-icon { color: #4A3F35; transition: color 200ms ease; }
+
+    .sidebar-sublink {
+        color: #9C8B7A;
+        font-family: 'Crimson Pro', serif;
+        font-size: 0.9375rem;
+    }
+    .sidebar-sublink:hover { color: #C9A962; background: rgba(74,63,53,0.25); }
+    .sidebar-sublink-active { color: #C9A962; }
+</style>

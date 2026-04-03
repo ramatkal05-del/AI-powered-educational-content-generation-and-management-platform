@@ -1,54 +1,72 @@
-﻿"""
-Signal handlers for user authentication events
+"""
+Signal handlers for the accounts app.
+Loaded once via AccountsConfig.ready() in apps.py.
 """
 
 import logging
 from django.contrib.auth.signals import user_logged_in
+from django.db.models.signals import post_save
 from django.dispatch import receiver
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
 from django.conf import settings
 from django.utils import timezone
 
 logger = logging.getLogger(__name__)
 
 
+# ---------------------------------------------------------------------------
+# UserProfile auto-creation
+# ---------------------------------------------------------------------------
+
+@receiver(post_save, sender=settings.AUTH_USER_MODEL)
+def create_user_profile(sender, instance, created, **kwargs):
+    """Ensure every new user gets a UserProfile and an activity log entry."""
+    if not created:
+        return
+
+    # Auto-create UserProfile
+    try:
+        from accounts.models import UserProfile
+        UserProfile.objects.get_or_create(user=instance, defaults={'timezone': 'UTC'})
+    except Exception:
+        logger.exception("Failed to create UserProfile for user %s", instance.pk)
+
+    # Log account creation activity
+    try:
+        from accounts.models import log_user_activity
+        log_user_activity(
+            user=instance,
+            activity_type='account_created',
+            description=f'Account created for {instance.get_full_name()}',
+        )
+    except Exception:
+        logger.exception("Failed to log account creation activity for user %s", instance.pk)
+
+
+# ---------------------------------------------------------------------------
+# Login notification / logging
+# ---------------------------------------------------------------------------
+
 @receiver(user_logged_in)
 def send_login_notification(sender, user, request, **kwargs):
-    """
-    Send email notification when user logs in (disabled for now to prevent timeouts)
-    """
+    """Log user login for security auditing."""
     try:
-        # TEMPORARILY DISABLED: Email notifications cause timeouts on Render
-        # Skip email sending until proper email backend is configured
-        
-        # Log the login for security purposes instead
-        ip_address = get_client_ip(request)
-        user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown')[:100]  # Truncate user agent
-        login_time = timezone.now()
-        
+        ip_address = _get_client_ip(request)
+        user_agent = request.META.get('HTTP_USER_AGENT', 'Unknown')[:100]
         logger.info(
-            f"User login: {user.username} ({user.email}) from {ip_address} "
-            f"at {login_time} using {user_agent}"
+            "User login: %s (%s) from %s at %s using %s",
+            user.username, user.email, ip_address, timezone.now(), user_agent,
         )
-        
-        # TODO: Re-enable email notifications when proper email backend is set up
-        # For now, just return without sending email
-        return
-        
-    except Exception as e:
-        logger.error(f"Error in login notification handler: {str(e)}")
-        # Don't re-raise - this should never break the login process
+    except Exception:
+        logger.exception("Error in login notification handler.")
 
 
-def get_client_ip(request):
-    """
-    Get the client's IP address from the request
-    """
+# ---------------------------------------------------------------------------
+# Helpers
+# ---------------------------------------------------------------------------
+
+def _get_client_ip(request):
+    """Return the client's real IP address."""
     x_forwarded_for = request.META.get('HTTP_X_FORWARDED_FOR')
     if x_forwarded_for:
-        ip = x_forwarded_for.split(',')[0]
-    else:
-        ip = request.META.get('REMOTE_ADDR')
-    return ip
+        return x_forwarded_for.split(',')[0].strip()
+    return request.META.get('REMOTE_ADDR')

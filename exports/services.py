@@ -11,7 +11,7 @@ import os
 import json
 import zipfile
 from datetime import datetime
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any, Optional, Tuple
 from pathlib import Path
 
 from django.conf import settings
@@ -19,6 +19,17 @@ from django.template.loader import render_to_string
 from django.utils import timezone
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
+
+# Optional image processing for efficient logo embedding
+try:
+    from PIL import Image as PILImage
+except ImportError:  # pragma: no cover
+    PILImage = None
+
+try:
+    import cairosvg
+except ImportError:  # pragma: no cover
+    cairosvg = None
 
 # Import export libraries
 try:
@@ -57,6 +68,104 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _guess_logo_mime(name: str) -> str:
+    ext = (os.path.splitext(name or "")[1] or "").lower()
+    if ext == '.svg':
+        return 'image/svg+xml'
+    if ext in ['.jpg', '.jpeg']:
+        return 'image/jpeg'
+    if ext == '.png':
+        return 'image/png'
+    if ext == '.gif':
+        return 'image/gif'
+    return 'image/png'
+
+
+def _read_logo_bytes_from_branding(branding: Optional[Dict[str, Any]]) -> Optional[Tuple[bytes, str]]:
+    """Resolve the uploaded logo into bytes suitable for embedding.
+
+    Prefers local filesystem paths when available, but can also read from Django storage
+    (important when ImageField storage isn't local).
+
+    Returns:
+        (bytes, mime_type) or None
+    """
+    if not branding:
+        return None
+
+    candidates: List[Tuple[str, str]] = []
+
+    logo_path = branding.get('logo_path')
+    if logo_path:
+        candidates.append(('path', str(logo_path)))
+
+    logo_url = branding.get('logo_url')
+    if logo_url and isinstance(logo_url, str) and logo_url.startswith('/media/'):
+        rel = logo_url.replace('/media/', '').lstrip('/').replace('/', os.sep)
+        candidates.append(('path', os.path.join(settings.MEDIA_ROOT, rel)))
+
+    logo_filename = branding.get('logo_filename')
+    if logo_filename:
+        # May be a storage path like "export_logos/foo.png"
+        candidates.append(('storage', str(logo_filename)))
+        # Also try as a relative path under MEDIA_ROOT
+        candidates.append(('path', os.path.join(settings.MEDIA_ROOT, str(logo_filename).replace('/', os.sep))))
+        # And as a basename under export_logos/
+        candidates.append(('path', os.path.join(settings.MEDIA_ROOT, 'export_logos', os.path.basename(str(logo_filename)))))
+
+    for kind, val in candidates:
+        try:
+            if kind == 'path' and val and os.path.exists(val):
+                with open(val, 'rb') as f:
+                    return f.read(), _guess_logo_mime(val)
+            if kind == 'storage' and val and default_storage.exists(val):
+                with default_storage.open(val, 'rb') as f:
+                    return f.read(), _guess_logo_mime(val)
+        except Exception as e:
+            logger.warning(f"Failed reading logo from {kind}={val}: {e}")
+            continue
+
+    return None
+
+
+def _prepare_logo_for_embedding(logo_bytes: bytes, mime_type: str, max_px: int = 256) -> Tuple[bytes, str]:
+    """Normalize the logo to a small embedded PNG (fast + consistent across exporters).
+
+    - SVG: convert to PNG if cairosvg is available.
+    - Raster: downscale to max_px and convert to PNG if Pillow is available.
+    """
+    if not logo_bytes:
+        return logo_bytes, mime_type
+
+    # SVG -> PNG
+    if mime_type == 'image/svg+xml':
+        if cairosvg is None:
+            logger.warning("SVG logo provided but cairosvg is not installed; skipping SVG conversion.")
+            return logo_bytes, mime_type
+        try:
+            png_bytes = cairosvg.svg2png(bytestring=logo_bytes, output_width=max_px, output_height=max_px)
+            return png_bytes, 'image/png'
+        except Exception as e:
+            logger.warning(f"Failed converting SVG logo to PNG: {e}")
+            return logo_bytes, mime_type
+
+    # Raster resize/convert
+    if PILImage is None:
+        return logo_bytes, mime_type
+
+    try:
+        img = PILImage.open(io.BytesIO(logo_bytes))
+        # Ensure deterministic output + broad compatibility
+        img = img.convert('RGBA') if img.mode not in ('RGB', 'RGBA') else img
+        img.thumbnail((max_px, max_px))
+        out = io.BytesIO()
+        img.save(out, format='PNG', optimize=True)
+        return out.getvalue(), 'image/png'
+    except Exception as e:
+        logger.warning(f"Failed resizing/converting logo for embedding: {e}")
+        return logo_bytes, mime_type
+
+
 class PDFExporter:
     """Service for exporting content to PDF format using ReportLab"""
     
@@ -66,6 +175,36 @@ class PDFExporter:
         self._setup_unicode_fonts()
         self.styles = getSampleStyleSheet()
         self._setup_custom_styles()
+
+    def _build_logo_flowable(self, branding: Optional[Dict[str, Any]], max_w=None, max_h=None):
+        """Return a ReportLab flowable for the uploaded logo (or None).
+
+        Uses bytes-based loading so it works with non-local Django storage too.
+        """
+        try:
+            if max_w is None:
+                max_w = 1.2 * inch
+            if max_h is None:
+                max_h = 1.2 * inch
+            resolved = _read_logo_bytes_from_branding(branding)
+            if not resolved:
+                return None
+            logo_bytes, mime = resolved
+            logo_bytes, _ = _prepare_logo_for_embedding(logo_bytes, mime, max_px=256)
+
+            # Compute aspect-preserving size
+            reader = ImageReader(io.BytesIO(logo_bytes))
+            iw, ih = reader.getSize()
+            if not iw or not ih:
+                return None
+
+            scale = min(max_w / float(iw), max_h / float(ih))
+            w = float(iw) * scale
+            h = float(ih) * scale
+            return Image(io.BytesIO(logo_bytes), width=w, height=h)
+        except Exception as e:
+            logger.warning(f"Could not build logo flowable: {e}")
+            return None
     
     def _setup_unicode_fonts(self):
         """Setup Unicode fonts that support Turkish characters"""
@@ -473,6 +612,7 @@ class PDFExporter:
     def _create_rduu_cover_page(self, quiz_data: Dict[str, Any], branding: Dict[str, Any] = None) -> List:
         """Create professional cover page with proper text placement"""
         elements = []
+        branding = branding or {}
         
         # Top header with academic info (removed RDUU)
         header_data = [[
@@ -490,8 +630,18 @@ class PDFExporter:
         elements.append(header_table)
         elements.append(Spacer(1, 25))
         
-        # University logo placeholder and name - optimized spacing
-        elements.append(Spacer(1, 15))
+        # University logo (embedded) - only shown when uploaded
+        logo_flowable = self._build_logo_flowable(branding, max_w=1.4*inch, max_h=1.4*inch)
+        if logo_flowable:
+            logo_table = Table([[logo_flowable]], colWidths=[6*inch])
+            logo_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(logo_table)
+            elements.append(Spacer(1, 12))
+        else:
+            elements.append(Spacer(1, 15))
         
         # University name with better positioning
         university_style = ParagraphStyle(
@@ -666,12 +816,65 @@ class PDFExporter:
         
         # Enhanced University Header with better spacing
         if branding:
+            # Add top spacing
+            elements.append(Spacer(1, 30))
+            
+            # Add logo first if available
+            if branding.get('logo_path') or branding.get('has_logo') or branding.get('logo_url'):
+                try:
+                    logo_path = None
+                    
+                    # Method 1: Direct path from branding settings
+                    if branding.get('logo_path'):
+                        potential_path = branding['logo_path']
+                        if os.path.exists(potential_path):
+                            logo_path = potential_path
+                            logger.info(f"Found logo for cover page using direct path: {logo_path}")
+                    
+                    # Method 2: Convert URL to file path if direct path didn't work
+                    if not logo_path and branding.get('logo_url'):
+                        from django.conf import settings
+                        logo_url = branding['logo_url']
+                        if logo_url.startswith('/media/'):
+                            relative_path = logo_url.replace('/media/', '').lstrip('/')
+                            potential_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                            if os.path.exists(potential_path):
+                                logo_path = potential_path
+                                logger.info(f"Found logo for cover page using URL conversion: {logo_path}")
+                    
+                    # Method 3: Try using filename from branding settings
+                    if not logo_path and branding.get('logo_filename'):
+                        from django.conf import settings
+                        filename = branding['logo_filename']
+                        potential_path = os.path.join(settings.MEDIA_ROOT, 'export_logos', os.path.basename(filename))
+                        if os.path.exists(potential_path):
+                            logo_path = potential_path
+                            logger.info(f"Found logo for cover page using filename: {logo_path}")
+                    
+                    if logo_path and os.path.exists(logo_path):
+                        from reportlab.platypus import Image as ReportLabImage
+                        try:
+                            # Create logo image with appropriate size
+                            logo_img = ReportLabImage(logo_path, width=100, height=100)
+                            
+                            # Create a table to center the logo properly
+                            logo_table = Table([[logo_img]], colWidths=[6*inch])
+                            logo_table.setStyle(TableStyle([
+                                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                            ]))
+                            
+                            elements.append(logo_table)
+                            elements.append(Spacer(1, 15))
+                            logger.info(f"Successfully added logo to cover page from: {logo_path}")
+                        except Exception as img_error:
+                            logger.error(f"Error creating logo image for cover page: {img_error}")
+                except Exception as e:
+                    logger.error(f"Could not add logo to cover page: {e}")
+            
             # University name and logo area with improved typography
             if branding.get('university_name') or branding.get('institution_name'):
                 institution = branding.get('university_name') or branding.get('institution_name')
-                
-                # Add top spacing
-                elements.append(Spacer(1, 30))
                 
                 # University header style - larger and more prominent
                 uni_style = ParagraphStyle(
@@ -1000,18 +1203,37 @@ class PDFExporter:
                     # Try to load actual logo image - check multiple path sources
                     logo_path = None
                     
-                    # Check different logo path sources
-                    if branding.get('logo_path') and os.path.exists(branding['logo_path']):
-                        logo_path = branding['logo_path']
-                    elif branding.get('logo_url'):
-                        # Convert URL to file path if it's a local file
-                        import urllib.parse
+                    # Check different logo path sources - try multiple methods
+                    logo_path = None
+                    
+                    # Method 1: Direct path from branding settings
+                    if branding.get('logo_path'):
+                        potential_path = branding['logo_path']
+                        if os.path.exists(potential_path):
+                            logo_path = potential_path
+                            logger.info(f"Found logo using direct path: {logo_path}")
+                    
+                    # Method 2: Convert URL to file path if direct path didn't work
+                    if not logo_path and branding.get('logo_url'):
                         from django.conf import settings
                         logo_url = branding['logo_url']
                         if logo_url.startswith('/media/'):
-                            logo_path = os.path.join(settings.MEDIA_ROOT, logo_url.replace('/media/', ''))
-                            if not os.path.exists(logo_path):
-                                logo_path = None
+                            # Remove /media/ prefix and join with MEDIA_ROOT
+                            relative_path = logo_url.replace('/media/', '').lstrip('/')
+                            potential_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                            if os.path.exists(potential_path):
+                                logo_path = potential_path
+                                logger.info(f"Found logo using URL conversion: {logo_path}")
+                    
+                    # Method 3: Try using filename from branding settings
+                    if not logo_path and branding.get('logo_filename'):
+                        from django.conf import settings
+                        filename = branding['logo_filename']
+                        # Try export_logos directory
+                        potential_path = os.path.join(settings.MEDIA_ROOT, 'export_logos', os.path.basename(filename))
+                        if os.path.exists(potential_path):
+                            logo_path = potential_path
+                            logger.info(f"Found logo using filename: {logo_path}")
                     
                     if logo_path and os.path.exists(logo_path):
                         # Load and display actual logo image
@@ -1390,6 +1612,18 @@ class PDFExporter:
     def _add_branding(self, branding: Dict[str, Any]) -> List:
         """Add professional branding elements to document"""
         elements = []
+        branding = branding or {}
+
+        # Logo (embedded) - keeps PDF self-contained and avoids path issues
+        logo_flowable = self._build_logo_flowable(branding, max_w=1.0*inch, max_h=1.0*inch)
+        if logo_flowable:
+            logo_table = Table([[logo_flowable]], colWidths=[6*inch])
+            logo_table.setStyle(TableStyle([
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+            ]))
+            elements.append(logo_table)
+            elements.append(Spacer(1, 10))
         
         # Institution name - university style
         if branding.get('institution_name') or branding.get('university_name'):
@@ -1564,6 +1798,22 @@ class DOCXExporter:
     
     def _add_single_docx_cover_page(self, doc: Document, quiz_data: Dict[str, Any], branding: Dict[str, Any]):
         """Add single comprehensive cover page to DOCX document"""
+        # Add logo first if available (bytes-based so it works with non-local storage)
+        logo_resolved = _read_logo_bytes_from_branding(branding)
+        if logo_resolved:
+            try:
+                logo_bytes, mime = logo_resolved
+                logo_bytes, _ = _prepare_logo_for_embedding(logo_bytes, mime, max_px=256)
+
+                logo_para = doc.add_paragraph()
+                logo_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                logo_run = logo_para.add_run()
+                logo_run.add_picture(io.BytesIO(logo_bytes), width=Inches(1.5))
+                doc.add_paragraph()  # spacing after logo
+                logger.info("Successfully added logo to DOCX cover page")
+            except Exception as e:
+                logger.warning(f"Could not add logo to DOCX cover page: {e}")
+        
         # University information
         if branding.get('university_name') or branding.get('institution_name'):
             institution = branding.get('university_name') or branding.get('institution_name')
@@ -1677,18 +1927,37 @@ class DOCXExporter:
             logo_added = False
             logo_path = None
             
-            # Check different logo path sources
-            if branding.get('logo_path') and os.path.exists(branding['logo_path']):
-                logo_path = branding['logo_path']
-            elif branding.get('logo_url'):
-                # Convert URL to file path if it's a local file
-                import urllib.parse
+            # Check different logo path sources - try multiple methods
+            logo_path = None
+            
+            # Method 1: Direct path from branding settings
+            if branding.get('logo_path'):
+                potential_path = branding['logo_path']
+                if os.path.exists(potential_path):
+                    logo_path = potential_path
+                    logger.info(f"Found logo for DOCX using direct path: {logo_path}")
+            
+            # Method 2: Convert URL to file path if direct path didn't work
+            if not logo_path and branding.get('logo_url'):
                 from django.conf import settings
                 logo_url = branding['logo_url']
                 if logo_url.startswith('/media/'):
-                    logo_path = os.path.join(settings.MEDIA_ROOT, logo_url.replace('/media/', ''))
-                    if not os.path.exists(logo_path):
-                        logo_path = None
+                    # Remove /media/ prefix and join with MEDIA_ROOT
+                    relative_path = logo_url.replace('/media/', '').lstrip('/')
+                    potential_path = os.path.join(settings.MEDIA_ROOT, relative_path)
+                    if os.path.exists(potential_path):
+                        logo_path = potential_path
+                        logger.info(f"Found logo for DOCX using URL conversion: {logo_path}")
+            
+            # Method 3: Try using filename from branding settings
+            if not logo_path and branding.get('logo_filename'):
+                from django.conf import settings
+                filename = branding['logo_filename']
+                # Try export_logos directory
+                potential_path = os.path.join(settings.MEDIA_ROOT, 'export_logos', os.path.basename(filename))
+                if os.path.exists(potential_path):
+                    logo_path = potential_path
+                    logger.info(f"Found logo for DOCX using filename: {logo_path}")
                         
             if logo_path and os.path.exists(logo_path):
                 try:
@@ -2868,14 +3137,28 @@ class HTMLExporter:
             '''
         
         # Replace logo placeholder with actual logo if available
+        # Prefer embedded base64 so exported HTML works offline and in ZIP downloads.
         logo_html = 'UNIVERSITY<br/>LOGO<br/><small>(Upload in export form)</small>'  # Default placeholder
-        if branding and branding.get('logo_url'):
+        if branding:
             try:
-                logo_url = branding.get('logo_url')
-                logo_html = f'<img src="{logo_url}" alt="University Logo" style="max-width: 80px; max-height: 80px; border-radius: 50%;"/>'
-                logger.info(f"Added logo to HTML export: {logo_url}")
+                logo_resolved = _read_logo_bytes_from_branding(branding)
+                if logo_resolved:
+                    import base64
+                    logo_bytes, mime = logo_resolved
+                    logo_bytes, mime = _prepare_logo_for_embedding(logo_bytes, mime, max_px=256)
+                    b64 = base64.b64encode(logo_bytes).decode('ascii')
+                    logo_html = f'<img src="data:{mime};base64,{b64}" alt="University Logo" style="max-width: 80px; max-height: 80px; object-fit: contain;"/>'
+                    logger.info("Added logo to HTML export using embedded data URL")
+                elif branding.get('logo_url'):
+                    # Fallback to URL when we cannot resolve bytes
+                    logo_url = branding.get('logo_url')
+                    if isinstance(logo_url, str):
+                        if not logo_url.startswith('http') and not logo_url.startswith('/'):
+                            logo_url = '/media/' + logo_url.lstrip('/')
+                        logo_html = f'<img src="{logo_url}" alt="University Logo" style="max-width: 80px; max-height: 80px; object-fit: contain;"/>'
+                        logger.info(f"Added logo to HTML export using URL: {logo_url}")
             except Exception as e:
-                logger.warning(f"Could not add logo to HTML: {e}")
+                logger.warning(f"Could not add logo to HTML export: {e}")
         
         html = html.replace('{{ logo_image_placeholder }}', logo_html)
         
@@ -3198,6 +3481,32 @@ class ExportService:
             branding = export_job.branding_settings or {}
             if export_job.watermark:
                 branding['watermark'] = export_job.watermark
+            
+            # Ensure logo information is included if university_logo exists
+            if export_job.university_logo:
+                try:
+                    import os
+                    from django.conf import settings
+                    logo_path = export_job.university_logo.path
+                    logo_url = export_job.university_logo.url
+                    
+                    if os.path.exists(logo_path):
+                        branding['logo_path'] = logo_path
+                        branding['logo_url'] = logo_url
+                        branding['logo_filename'] = export_job.university_logo.name
+                        branding['has_logo'] = True
+                        logger.info(f"Logo included in branding: {logo_path}")
+                    else:
+                        # Try alternative path resolution
+                        if logo_url.startswith('/media/'):
+                            alt_path = os.path.join(settings.MEDIA_ROOT, logo_url.replace('/media/', ''))
+                            if os.path.exists(alt_path):
+                                branding['logo_path'] = alt_path
+                                branding['logo_url'] = logo_url
+                                branding['has_logo'] = True
+                                logger.info(f"Logo found at alternative path: {alt_path}")
+                except Exception as e:
+                    logger.warning(f"Could not add logo to branding in export_generation: {e}")
             
             # Export using the main export method
             result = self.export_content(

@@ -111,9 +111,8 @@ tmp/
 logs/
 *.log
 
-# Static files (will be collected in production)
+# Static files (collected output only — source static/ IS tracked in git)
 staticfiles/
-static/
 
 # Backup files
 *.bak

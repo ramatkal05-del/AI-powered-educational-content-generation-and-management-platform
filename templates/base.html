@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="{% firstof request.LANGUAGE_CODE 'en' %}" class="h-full bg-gray-50">
+<html lang="{% firstof request.LANGUAGE_CODE 'en' %}" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -15,9 +15,13 @@
     <link rel="icon" type="image/svg+xml" sizes="32x32" href="{% static 'images/favicons/favicon-32x32.svg' %}">
     <link rel="apple-touch-icon" sizes="180x180" href="{% static 'images/favicons/apple-touch-icon.svg' %}">
     <link rel="manifest" href="{% static 'images/favicons/site.webmanifest' %}">
-    <meta name="msapplication-TileColor" content="#1e3a8a">
-    <meta name="theme-color" content="#1e3a8a">
+    <meta name="theme-color" content="#1C1714">
     
+    <!-- Academia / Classical Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600;700&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+
     <!-- TailwindCSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -25,39 +29,55 @@
             theme: {
                 extend: {
                     colors: {
+                        // Academia / Classical Color System
+                        mahogany:  '#1C1714',  // Deep Mahogany — page background
+                        oak:       '#251E19',  // Aged Oak — cards, panels
+                        parchment: '#E8DFD4',  // Antique Parchment — primary text
+                        leather:   '#3D332B',  // Worn Leather — tertiary bg / disabled
+                        ink:       '#9C8B7A',  // Faded Ink — secondary text / labels
+                        wood:      '#4A3F35',  // Wood Grain — borders / dividers
+                        brass:     '#C9A962',  // Polished Brass — primary interactive
+                        crimson:   '#8B2635',  // Library Crimson — emphasis / hover transform
+                        // Semantic aliases for familiar patterns
                         primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        },
-                        success: {
-                            50: '#f0fdf4',
-                            100: '#dcfce7',
-                            500: '#22c55e',
-                            600: '#16a34a',
-                            700: '#15803d',
-                        },
-                        warning: {
-                            50: '#fffbeb',
-                            100: '#fef3c7',
-                            500: '#f59e0b',
-                            600: '#d97706',
-                            700: '#b45309',
+                            50:  '#FBF6EC',
+                            100: '#F4E9CC',
+                            200: '#E8D09A',
+                            300: '#D4B872',
+                            400: '#C9A962',
+                            500: '#B8953F',
+                            600: '#A07C2A',
+                            700: '#7D5E1C',
+                            800: '#5A4213',
+                            900: '#3A2B0C',
                         },
                         danger: {
-                            50: '#fef2f2',
+                            50:  '#fef2f2',
                             100: '#fee2e2',
                             500: '#ef4444',
                             600: '#dc2626',
                             700: '#b91c1c',
-                        }
+                        },
+                        success: {
+                            50:  '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                        },
+                        warning: {
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        },
                     },
                     fontFamily: {
-                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                        heading: ['"Cormorant Garamond"', 'serif'],
+                        body:    ['"Crimson Pro"', 'serif'],
+                        display: ['Cinzel', 'serif'],
+                        sans:    ['"Crimson Pro"', 'serif'],  // Override sans to keep scholarly feel
+                    },
+                    letterSpacing: {
+                        engraved: '0.2em',
+                        wide:     '0.15em',
                     },
                 }
             }
@@ -67,68 +87,584 @@
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
     
-    <!-- Heroicons -->
-    <script src="https://cdn.jsdelivr.net/npm/heroicons@2.0.18/24/outline/index.js"></script>
-    
     <!-- Chart.js for analytics -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
-    <!-- Additional CSS -->
+    <!-- Academia Design System — Global Styles -->
     <style>
+        /* ═══════════════════════════════════════════════
+           ACADEMIA DESIGN SYSTEM – BASE TOKENS
+        ═══════════════════════════════════════════════ */
+
+        :root {
+            --color-bg:          #1C1714;
+            --color-bg-alt:      #251E19;
+            --color-fg:          #E8DFD4;
+            --color-muted:       #3D332B;
+            --color-ink:         #9C8B7A;
+            --color-border:      #4A3F35;
+            --color-brass:       #C9A962;
+            --color-brass-light: #D4B872;
+            --color-brass-dark:  #B8953F;
+            --color-crimson:     #8B2635;
+
+            --font-heading: 'Cormorant Garamond', serif;
+            --font-body:    'Crimson Pro', serif;
+            --font-display: 'Cinzel', serif;
+
+            --shadow-card:    0 8px 24px rgba(0,0,0,0.3);
+            --shadow-engraved:
+                inset 0 1px 0 rgba(255,255,255,0.2),
+                inset 0 -1px 0 rgba(0,0,0,0.2),
+                0 2px 8px rgba(0,0,0,0.3);
+            --shadow-engraved-hover:
+                inset 0 1px 0 rgba(255,255,255,0.25),
+                inset 0 -1px 0 rgba(0,0,0,0.25),
+                0 4px 12px rgba(201,169,98,0.3);
+
+            --text-shadow-engraved: 1px 1px 1px rgba(0,0,0,0.4), -1px -1px 1px rgba(255,255,255,0.1);
+        }
+
+        /* ═══════════════════════════════════════════════
+           GLOBAL BASE
+        ═══════════════════════════════════════════════ */
+
+        html, body {
+            background-color: var(--color-bg);
+            color: var(--color-fg);
+            font-family: var(--font-body);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* ═══════════════════════════════════════════════
+           ATMOSPHERIC OVERLAYS (Fixed, non-interactive)
+        ═══════════════════════════════════════════════ */
+
+        /* Aged Paper Noise Texture */
+        .academia-texture {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9999;
+            opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+        }
+
+        /* Vignette Effect */
+        .academia-vignette {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 9998;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 55%, rgba(28,23,20,0.5) 100%);
+        }
+
+        /* ═══════════════════════════════════════════════
+           TYPOGRAPHY
+        ═══════════════════════════════════════════════ */
+
+        h1, h2, h3, h4, h5, h6 {
+            font-family: var(--font-heading);
+            color: var(--color-fg);
+            line-height: 1.15;
+        }
+
+        /* Section labels: Cinzel, engraved style */
+        .label-cinzel {
+            font-family: var(--font-display);
+            font-size: 0.625rem;
+            letter-spacing: 0.25em;
+            text-transform: uppercase;
+            color: var(--color-brass);
+            font-weight: 600;
+        }
+
+        /* Drop cap for intro paragraphs */
+        .drop-cap::first-letter {
+            font-family: var(--font-display);
+            font-size: 4.5rem;
+            line-height: 0.8;
+            float: left;
+            margin-right: 0.2em;
+            margin-top: 0.05em;
+            color: var(--color-brass);
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* Engraved text effect — for buttons and special headings */
+        .text-engraved {
+            text-shadow: var(--text-shadow-engraved);
+        }
+
+        /* ═══════════════════════════════════════════════
+           BUTTONS — Academia Style
+        ═══════════════════════════════════════════════ */
+
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: var(--font-display);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            text-shadow: var(--text-shadow-engraved);
+            color: var(--color-bg);
+            background: linear-gradient(180deg, #D4B872 0%, #C9A962 50%, #B8953F 100%);
+            border: none;
+            border-radius: 4px;
+            padding: 0.625rem 1.75rem;
+            height: 2.75rem;
+            cursor: pointer;
+            box-shadow: var(--shadow-engraved);
+            transition: filter 300ms ease, box-shadow 300ms ease;
+        }
+        .btn-primary:hover {
+            filter: brightness(1.1);
+            box-shadow: var(--shadow-engraved-hover);
+        }
+        .btn-primary:active {
+            filter: brightness(0.95);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+        }
+        .btn-primary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-brass);
+        }
+
+        .btn-secondary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: var(--font-display);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--color-brass);
+            background: transparent;
+            border: 2px solid var(--color-brass);
+            border-radius: 4px;
+            padding: 0.5625rem 1.75rem;
+            height: 2.75rem;
+            cursor: pointer;
+            transition: background 300ms ease, border-color 300ms ease, color 300ms ease;
+        }
+        .btn-secondary:hover {
+            background: var(--color-crimson);
+            border-color: var(--color-crimson);
+            color: var(--color-fg);
+        }
+        .btn-secondary:focus-visible {
+            outline: none;
+            box-shadow: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-brass);
+        }
+
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            font-family: var(--font-display);
+            font-size: 0.6875rem;
+            font-weight: 600;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--color-brass);
+            background: transparent;
+            border: none;
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            text-decoration: none;
+            transition: color 300ms ease;
+        }
+        .btn-ghost:hover {
+            color: var(--color-brass-light);
+            text-decoration: underline;
+            text-underline-offset: 4px;
+        }
+
+        /* ═══════════════════════════════════════════════
+           CARDS — Academia Style
+        ═══════════════════════════════════════════════ */
+
+        .academia-card {
+            position: relative;
+            background-color: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            padding: 2rem;
+            transition: border-color 300ms ease, box-shadow 300ms ease;
+        }
+        .academia-card:hover {
+            border-color: rgba(201, 169, 98, 0.4);
+            box-shadow: var(--shadow-card);
+        }
+
+        /* Corner flourishes on cards */
+        .academia-card.with-flourish::before,
+        .academia-card.with-flourish::after {
+            content: "";
+            position: absolute;
+            width: 24px;
+            height: 24px;
+            border: 1.5px solid rgba(201, 169, 98, 0.5);
+            transition: opacity 300ms ease;
+        }
+        .academia-card.with-flourish::before {
+            top: -1px;
+            left: -1px;
+            border-right: none;
+            border-bottom: none;
+        }
+        .academia-card.with-flourish::after {
+            bottom: -1px;
+            right: -1px;
+            border-left: none;
+            border-top: none;
+        }
+        .academia-card.with-flourish:hover::before,
+        .academia-card.with-flourish:hover::after {
+            border-color: var(--color-brass);
+        }
+
+        /* Large corner flourishes: for major frames (hero) */
+        .ornate-frame {
+            position: relative;
+        }
+        .ornate-frame::before,
+        .ornate-frame::after {
+            content: "";
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            border: 2px solid var(--color-brass);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .ornate-frame::before {
+            top: -1px;
+            left: -1px;
+            border-right: none;
+            border-bottom: none;
+        }
+        .ornate-frame::after {
+            bottom: -1px;
+            right: -1px;
+            border-left: none;
+            border-top: none;
+        }
+
+        /* ═══════════════════════════════════════════════
+           ORNATE DIVIDERS
+        ═══════════════════════════════════════════════ */
+
+        .ornate-divider {
+            position: relative;
+            height: 1px;
+            background: linear-gradient(90deg, transparent 0%, var(--color-border) 20%, var(--color-brass) 50%, var(--color-border) 80%, transparent 100%);
+            margin: 1.5rem 0;
+        }
+        .ornate-divider::before {
+            content: "✶";
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--color-brass);
+            font-size: 0.625rem;
+            background: var(--color-bg);
+            padding: 0 0.75rem;
+            line-height: 1;
+        }
+        .ornate-divider.on-card::before {
+            background: var(--color-bg-alt);
+        }
+
+        /* ═══════════════════════════════════════════════
+           ARCH-TOP IMAGES (Cathedral signature)
+        ═══════════════════════════════════════════════ */
+
+        .arch-top {
+            border-radius: 40% 40% 0 0 / 20% 20% 0 0;
+            overflow: hidden;
+        }
+
+        /* Sepia-to-colour image treatment */
+        .academia-img {
+            filter: sepia(0.6) contrast(0.95) brightness(0.9);
+            transition: filter 700ms ease-out;
+        }
+        .academia-img:hover {
+            filter: sepia(0) contrast(1) brightness(1);
+        }
+
+        /* ═══════════════════════════════════════════════
+           FORM INPUTS — Academia Style
+        ═══════════════════════════════════════════════ */
+
+        .academia-input {
+            display: block;
+            width: 100%;
+            background-color: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-fg);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            padding: 0.625rem 1rem;
+            height: 3rem;
+            transition: border-color 300ms ease, box-shadow 300ms ease;
+        }
+        .academia-input::placeholder {
+            font-style: italic;
+            color: var(--color-ink);
+        }
+        .academia-input:focus {
+            outline: none;
+            border-color: var(--color-brass);
+            box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.2);
+        }
+
+        .academia-label {
+            font-family: var(--font-display);
+            font-size: 0.625rem;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--color-ink);
+            display: block;
+            margin-bottom: 0.375rem;
+        }
+
+        .academia-select {
+            display: block;
+            width: 100%;
+            background-color: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-fg);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            padding: 0.625rem 1rem;
+            height: 3rem;
+            cursor: pointer;
+            appearance: none;
+            -webkit-appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%23C9A962' stroke-width='1.5' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 1rem center;
+            padding-right: 2.5rem;
+            transition: border-color 300ms ease;
+        }
+        .academia-select:focus {
+            outline: none;
+            border-color: var(--color-brass);
+            box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.2);
+        }
+        .academia-select option {
+            background: var(--color-bg-alt);
+            color: var(--color-fg);
+        }
+
+        .academia-textarea {
+            display: block;
+            width: 100%;
+            background-color: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 4px;
+            color: var(--color-fg);
+            font-family: var(--font-body);
+            font-size: 1rem;
+            padding: 0.75rem 1rem;
+            resize: vertical;
+            transition: border-color 300ms ease, box-shadow 300ms ease;
+        }
+        .academia-textarea::placeholder {
+            font-style: italic;
+            color: var(--color-ink);
+        }
+        .academia-textarea:focus {
+            outline: none;
+            border-color: var(--color-brass);
+            box-shadow: 0 0 0 3px rgba(201, 169, 98, 0.2);
+        }
+
+        /* Checkbox & Radio */
+        .academia-checkbox {
+            width: 1rem;
+            height: 1rem;
+            background: var(--color-bg-alt);
+            border: 1px solid var(--color-border);
+            border-radius: 2px;
+            accent-color: var(--color-brass);
+            cursor: pointer;
+        }
+
+        /* ═══════════════════════════════════════════════
+           ALERT / MESSAGE BANNERS — Academia Style
+        ═══════════════════════════════════════════════ */
+
+        .academia-alert {
+            border: 1px solid;
+            border-radius: 4px;
+            padding: 0.875rem 1rem;
+            font-family: var(--font-body);
+            font-size: 1rem;
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+        }
+        .academia-alert-success {
+            background: rgba(22, 164, 74, 0.1);
+            border-color: rgba(22, 164, 74, 0.4);
+            color: #4ade80;
+        }
+        .academia-alert-error {
+            background: rgba(139, 38, 53, 0.15);
+            border-color: rgba(139, 38, 53, 0.5);
+            color: #f87171;
+        }
+        .academia-alert-warning {
+            background: rgba(201, 169, 98, 0.1);
+            border-color: rgba(201, 169, 98, 0.4);
+            color: var(--color-brass);
+        }
+        .academia-alert-info {
+            background: rgba(201, 169, 98, 0.08);
+            border-color: rgba(201, 169, 98, 0.3);
+            color: var(--color-ink);
+        }
+
+        /* ═══════════════════════════════════════════════
+           WAX SEAL BADGE
+        ═══════════════════════════════════════════════ */
+
+        .wax-seal {
+            position: absolute;
+            top: -0.75rem;
+            right: 1.5rem;
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            background: radial-gradient(circle at 35% 35%, #b03040, #8B2635 60%, #6a1c28);
+            box-shadow: inset 0 2px 4px rgba(255,255,255,0.2), inset 0 -2px 4px rgba(0,0,0,0.3), 0 4px 8px rgba(0,0,0,0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #E8DFD4;
+        }
+
+        /* ═══════════════════════════════════════════════
+           SCROLLBAR
+        ═══════════════════════════════════════════════ */
+
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: var(--color-bg); }
+        ::-webkit-scrollbar-thumb { background: var(--color-muted); border-radius: 3px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--color-wood); }
+
+        /* ═══════════════════════════════════════════════
+           UTILITIES
+        ═══════════════════════════════════════════════ */
+
         [x-cloak] { display: none !important; }
-        
-        /* Custom scrollbar */
-        .custom-scrollbar::-webkit-scrollbar {
-            width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-            background: #cbd5e1;
-            border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-            background: #94a3b8;
-        }
-        
-        /* Loading animation */
+
         .loading-dots::after {
             content: '';
             animation: loading-dots 1.5s infinite;
         }
-        
         @keyframes loading-dots {
-            0%, 20% { content: ''; }
-            40% { content: '.'; }
-            60% { content: '..'; }
-            80%, 100% { content: '...'; }
+            0%, 20%  { content: ''; }
+            40%      { content: '.'; }
+            60%      { content: '..'; }
+            80%, 100%{ content: '...'; }
         }
-        
-        /* Fade in animation */
-        .fade-in {
-            animation: fadeIn 0.5s ease-in;
+
+        /* Badge / Pill */
+        .academia-badge {
+            display: inline-flex;
+            align-items: center;
+            font-family: var(--font-display);
+            font-size: 0.5625rem;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 0.2rem 0.625rem;
+            border-radius: 2px;
         }
-        
-        @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+        .academia-badge-brass  { background: rgba(201,169,98,0.12); color: var(--color-brass); border: 1px solid rgba(201,169,98,0.25); }
+        .academia-badge-crimson{ background: rgba(139,38,53,0.15); color: #c94258; border: 1px solid rgba(139,38,53,0.3); }
+        .academia-badge-green  { background: rgba(22,164,74,0.12); color: #4ade80; border: 1px solid rgba(22,164,74,0.3); }
+        .academia-badge-muted  { background: rgba(74,63,53,0.4); color: var(--color-ink); border: 1px solid var(--color-border); }
+
+        /* Section Volume header — "Volume I" pattern */
+        .volume-label {
+            font-family: var(--font-display);
+            font-size: 0.625rem;
+            letter-spacing: 0.3em;
+            text-transform: uppercase;
+            color: var(--color-brass);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+        .volume-label::before,
+        .volume-label::after {
+            content: "";
+            flex: 1;
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--color-brass));
+        }
+        .volume-label::after {
+            background: linear-gradient(90deg, var(--color-brass), transparent);
+        }
+
+        /* Page header panel inside content, matches design */
+        .page-header-panel {
+            background: var(--color-bg-alt);
+            border-bottom: 1px solid var(--color-border);
+            padding: 1.25rem 1.5rem;
+        }
+
+        /* Loading overlay */
+        .loading-overlay {
+            background: rgba(28, 23, 20, 0.7);
+        }
+
+        /* Transition utilities */
+        .transition-academia {
+            transition: all 300ms ease;
+        }
+
+        /* ═══════════════════════════════════════════════
+           REDUCED MOTION
+        ═══════════════════════════════════════════════ */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
         }
     </style>
     
     {% block extra_css %}{% endblock %}
 </head>
-<body class="h-full" x-data="{ 
-    sidebarOpen: false, 
-    theme: localStorage.getItem('theme') || 'light',
-    notifications: [],
-    showNotifications: false
-}" 
-x-init="
-    if (theme === 'dark' || (theme === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
-        document.documentElement.classList.add('dark')
-    }
-">
+<body class="h-full" style="background-color: #1C1714; color: #E8DFD4;"
+      x-data="{ 
+          sidebarOpen: false, 
+          notifications: [],
+          showNotifications: false
+      }">
+
+    <!-- Atmospheric Overlays (aria-hidden, non-interactive) -->
+    <div class="academia-texture" aria-hidden="true"></div>
+    <div class="academia-vignette" aria-hidden="true"></div>
+
     <!-- Loading overlay -->
     <div id="loading-overlay" 
          x-show="false" 
@@ -138,11 +674,11 @@ x-init="
          x-transition:leave="transition ease-in duration-300"
          x-transition:leave-start="opacity-100"
          x-transition:leave-end="opacity-0"
-         class="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50"
+         class="fixed inset-0 z-50 flex items-center justify-center loading-overlay"
          style="display: none;">
-        <div class="bg-white rounded-lg p-6 flex items-center space-x-3">
-            <div class="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600"></div>
-            <span class="text-gray-700">Loading<span class="loading-dots"></span></span>
+        <div class="academia-card with-flourish text-center p-8">
+            <div class="w-8 h-8 border-2 border-brass border-t-transparent rounded-full animate-spin mx-auto mb-3" style="border-color: #C9A962; border-top-color: transparent;"></div>
+            <span class="label-cinzel text-xs" style="color: #9C8B7A;">Processing<span class="loading-dots"></span></span>
         </div>
     </div>
 
@@ -153,7 +689,7 @@ x-init="
             {% include 'components/sidebar.html' %}
             
             <!-- Main Content Area -->
-            <div class="flex-1 flex flex-col min-w-0">
+            <div class="flex-1 flex flex-col min-w-0" style="background-color: #1C1714;">
                 <!-- Top Navigation -->
                 {% include 'components/navbar.html' %}
                 
@@ -162,37 +698,29 @@ x-init="
                     <!-- Breadcrumbs -->
                     {% block breadcrumbs %}
                         {% if breadcrumbs %}
-                        <div class="bg-white border-b border-gray-200">
-                            <div class="px-4 sm:px-6 lg:px-8 py-3">
-                                <nav class="flex" aria-label="Breadcrumb">
-                                    <ol class="flex items-center space-x-4">
-                                        <li>
-                                            <div>
-                                                <a href="{% url 'core:dashboard' %}" class="text-gray-400 hover:text-gray-500">
-                                                    <svg class="flex-shrink-0 h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"></path>
-                                                    </svg>
-                                                    <span class="sr-only">Home</span>
-                                                </a>
-                                            </div>
-                                        </li>
-                                        {% for breadcrumb in breadcrumbs %}
-                                        <li>
-                                            <div class="flex items-center">
-                                                <svg class="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 111.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"></path>
-                                                </svg>
-                                                {% if breadcrumb.url %}
-                                                <a href="{{ breadcrumb.url }}" class="ml-4 text-sm font-medium text-gray-500 hover:text-gray-700">{{ breadcrumb.title }}</a>
-                                                {% else %}
-                                                <span class="ml-4 text-sm font-medium text-gray-900">{{ breadcrumb.title }}</span>
-                                                {% endif %}
-                                            </div>
-                                        </li>
-                                        {% endfor %}
-                                    </ol>
-                                </nav>
-                            </div>
+                        <div class="page-header-panel">
+                            <nav class="flex" aria-label="Breadcrumb">
+                                <ol class="flex items-center gap-2">
+                                    <li>
+                                        <a href="{% url 'core:dashboard' %}" class="btn-ghost" style="padding: 0; font-size: 0.55rem;">
+                                            <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                                <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                                            </svg>
+                                            <span class="sr-only">Home</span>
+                                        </a>
+                                    </li>
+                                    {% for breadcrumb in breadcrumbs %}
+                                    <li class="flex items-center gap-2">
+                                        <span style="color: #4A3F35;">❯</span>
+                                        {% if breadcrumb.url %}
+                                        <a href="{{ breadcrumb.url }}" class="btn-ghost" style="padding: 0; font-size: 0.55rem;">{{ breadcrumb.title }}</a>
+                                        {% else %}
+                                        <span class="label-cinzel" style="font-size: 0.55rem; color: #E8DFD4;">{{ breadcrumb.title }}</span>
+                                        {% endif %}
+                                    </li>
+                                    {% endfor %}
+                                </ol>
+                            </nav>
                         </div>
                         {% endif %}
                     {% endblock %}
@@ -200,72 +728,53 @@ x-init="
                     <!-- Page Header -->
                     {% block page_header %}
                         {% if page_title %}
-                        <div class="bg-white shadow">
-                            <div class="px-4 sm:px-6 lg:px-8 py-6">
-                                <div class="md:flex md:items-center md:justify-between">
-                                    <div class="flex-1 min-w-0">
-                                        <h1 class="text-2xl font-bold leading-7 text-gray-900 sm:text-3xl sm:truncate">
-                                            {{ page_title }}
-                                        </h1>
-                                        {% if page_description %}
-                                        <p class="mt-2 text-sm text-gray-600">{{ page_description }}</p>
-                                        {% endif %}
-                                    </div>
-                                    {% block page_actions %}{% endblock %}
+                        <div class="page-header-panel" style="border-bottom: 1px solid #4A3F35;">
+                            <div class="md:flex md:items-center md:justify-between gap-4">
+                                <div class="flex-1 min-w-0">
+                                    {% if page_title %}
+                                    <p class="label-cinzel mb-1" style="font-size: 0.55rem;">{% block page_volume %}DidactAI{% endblock %}</p>
+                                    {% endif %}
+                                    <h1 class="text-2xl sm:text-3xl" style="font-family: 'Cormorant Garamond', serif; color: #E8DFD4; font-weight: 400;">
+                                        {{ page_title }}
+                                    </h1>
+                                    {% if page_description %}
+                                    <p class="mt-1 text-base" style="color: #9C8B7A; font-family: 'Crimson Pro', serif;">{{ page_description }}</p>
+                                    {% endif %}
                                 </div>
+                                {% block page_actions %}{% endblock %}
                             </div>
                         </div>
                         {% endif %}
                     {% endblock %}
                     
-                    <!-- Messages/Alerts -->
+                    <!-- Messages / Alerts -->
                     {% if messages %}
-                        <div class="p-4">
+                        <div class="p-4 space-y-3">
                             {% for message in messages %}
-                                <div class="mb-4 p-4 rounded-md {% if message.tags == "error" %}bg-red-50 border border-red-200{% elif message.tags == "success" %}bg-green-50 border border-green-200{% elif message.tags == "warning" %}bg-yellow-50 border border-yellow-200{% else %}bg-blue-50 border border-blue-200{% endif %}"
+                                <div class="academia-alert {% if message.tags == 'error' %}academia-alert-error{% elif message.tags == 'success' %}academia-alert-success{% elif message.tags == 'warning' %}academia-alert-warning{% else %}academia-alert-info{% endif %}"
                                      x-data="{ show: true }"
                                      x-show="show"
                                      x-transition:enter="transition ease-out duration-300"
-                                     x-transition:enter-start="opacity-0 transform scale-95"
-                                     x-transition:enter-end="opacity-100 transform scale-100">
-                                    <div class="flex">
-                                        <div class="flex-shrink-0">
-                                            {% if message.tags == "error" %}
-                                                <svg class="h-5 w-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            {% elif message.tags == "success" %}
-                                                <svg class="h-5 w-5 text-green-400" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            {% elif message.tags == "warning" %}
-                                                <svg class="h-5 w-5 text-yellow-400" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            {% else %}
-                                                <svg class="h-5 w-5 text-blue-400" fill="currentColor" viewBox="0 0 20 20">
-                                                    <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                                                </svg>
-                                            {% endif %}
-                                        </div>
-                                        <div class="ml-3 flex-1">
-                                            <p class="text-sm {% if message.tags == "error" %}text-red-800{% elif message.tags == "success" %}text-green-800{% elif message.tags == "warning" %}text-yellow-800{% else %}text-blue-800{% endif %}">
-                                                {{ message }}
-                                            </p>
-                                        </div>
-                                        <div class="ml-auto pl-3">
-                                            <div class="-mx-1.5 -my-1.5">
-                                                <button type="button" 
-                                                        @click="show = false"
-                                                        class="inline-flex rounded-md p-1.5 {% if message.tags == "error" %}text-red-500 hover:bg-red-100 focus:ring-red-600{% elif message.tags == "success" %}text-green-500 hover:bg-green-100 focus:ring-green-600{% elif message.tags == "warning" %}text-yellow-500 hover:bg-yellow-100 focus:ring-yellow-600{% else %}text-blue-500 hover:bg-blue-100 focus:ring-blue-600{% endif %} focus:ring-2 focus:ring-offset-2">
-                                                    <span class="sr-only">Dismiss</span>
-                                                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
-                                                    </svg>
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
+                                     x-transition:enter-start="opacity-0 -translate-y-1"
+                                     x-transition:enter-end="opacity-100 translate-y-0"
+                                     role="alert">
+                                    <svg class="h-4 w-4 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                        {% if message.tags == 'error' %}
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/>
+                                        {% elif message.tags == 'success' %}
+                                            <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                                        {% elif message.tags == 'warning' %}
+                                            <path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/>
+                                        {% else %}
+                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"/>
+                                        {% endif %}
+                                    </svg>
+                                    <p class="flex-1 text-base">{{ message }}</p>
+                                    <button type="button" @click="show = false" class="btn-ghost ml-auto" style="padding: 0.125rem; font-size: 0.55rem;" aria-label="Dismiss">
+                                        <svg class="h-3.5 w-3.5" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
+                                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                                        </svg>
+                                    </button>
                                 </div>
                             {% endfor %}
                         </div>
@@ -274,23 +783,20 @@ x-init="
                     <!-- Main Content -->
                     <div class="{% block content_classes %}px-4 sm:px-6 lg:px-8 py-6{% endblock %}">
                         {% block content %}
-                        <!-- Dashboard content will be inserted here -->
                         {% endblock %}
                     </div>
                 </main>
             </div>
         </div>
         
-        <!-- Notifications Panel -->
-        {% include 'components/notifications.html' %}
-        
     {% else %}
-        <!-- Public Layout (Login/Register pages) -->
-        <div class="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100">
+        <!-- Public Layout (Login / Register) -->
+        <div class="min-h-screen" style="background: radial-gradient(ellipse at 60% 30%, #251E19 0%, #1C1714 70%);">
             {% block public_content %}
-            <div class="text-center py-12">
-                <h2 class="text-lg font-medium text-gray-900">Welcome to DidactAI</h2>
-                <p class="mt-2 text-sm text-gray-600">Your AI-powered educational content management platform</p>
+            <div class="text-center py-16">
+                <p class="label-cinzel text-xs">Welcome to</p>
+                <h2 class="mt-2 text-3xl" style="font-family: 'Cormorant Garamond', serif;">DidactAI</h2>
+                <p class="mt-3 text-base" style="color: #9C8B7A; font-family: 'Crimson Pro', serif;">Your AI-powered educational content management platform</p>
             </div>
             {% endblock %}
         </div>
@@ -298,37 +804,7 @@ x-init="
     
     <!-- Global JavaScript -->
     <script>
-        // Global functions and utilities
         window.DidactAI = {
-            // Show loading overlay
-            showLoading: function() {
-                Alpine.store('app').loading = true;
-            },
-            
-            // Hide loading overlay
-            hideLoading: function() {
-                Alpine.store('app').loading = false;
-            },
-            
-            // Show notification
-            notify: function(message, type = 'info', duration = 5000) {
-                const notification = {
-                    id: Date.now(),
-                    message: message,
-                    type: type,
-                    duration: duration
-                };
-                
-                Alpine.store('notifications').add(notification);
-                
-                if (duration > 0) {
-                    setTimeout(() => {
-                        Alpine.store('notifications').remove(notification.id);
-                    }, duration);
-                }
-            },
-            
-            // API helper
             api: {
                 async request(url, options = {}) {
                     const defaults = {
@@ -337,16 +813,10 @@ x-init="
                             'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]')?.value
                         }
                     };
-                    
                     const config = { ...defaults, ...options };
-                    
                     try {
                         const response = await fetch(url, config);
-                        
-                        if (!response.ok) {
-                            throw new Error(`HTTP error! status: ${response.status}`);
-                        }
-                        
+                        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
                         return await response.json();
                     } catch (error) {
                         console.error('API request failed:', error);
@@ -354,73 +824,37 @@ x-init="
                     }
                 }
             },
-            
-            // File upload helper
             upload: {
                 async uploadFile(file, url, onProgress = null) {
                     return new Promise((resolve, reject) => {
                         const formData = new FormData();
                         formData.append('file', file);
                         formData.append('csrfmiddlewaretoken', document.querySelector('[name=csrfmiddlewaretoken]').value);
-                        
                         const xhr = new XMLHttpRequest();
-                        
                         xhr.upload.addEventListener('progress', (e) => {
-                            if (e.lengthComputable && onProgress) {
-                                const progress = (e.loaded / e.total) * 100;
-                                onProgress(progress);
-                            }
+                            if (e.lengthComputable && onProgress) onProgress((e.loaded / e.total) * 100);
                         });
-                        
                         xhr.addEventListener('load', () => {
                             if (xhr.status === 200) {
-                                try {
-                                    const response = JSON.parse(xhr.responseText);
-                                    resolve(response);
-                                } catch (e) {
-                                    reject(new Error('Invalid JSON response'));
-                                }
-                            } else {
-                                reject(new Error(`Upload failed with status ${xhr.status}`));
-                            }
+                                try { resolve(JSON.parse(xhr.responseText)); }
+                                catch (e) { reject(new Error('Invalid JSON response')); }
+                            } else { reject(new Error(`Upload failed with status ${xhr.status}`)); }
                         });
-                        
-                        xhr.addEventListener('error', () => {
-                            reject(new Error('Upload failed'));
-                        });
-                        
+                        xhr.addEventListener('error', () => reject(new Error('Upload failed')));
                         xhr.open('POST', url);
                         xhr.send(formData);
                     });
                 }
             }
         };
-        
-        // Alpine stores
+
         document.addEventListener('alpine:init', () => {
             Alpine.store('app', {
                 loading: false,
                 sidebarCollapsed: localStorage.getItem('sidebarCollapsed') === 'true'
             });
-            
-            Alpine.store('notifications', {
-                items: [],
-                
-                add(notification) {
-                    this.items.push(notification);
-                },
-                
-                remove(id) {
-                    this.items = this.items.filter(item => item.id !== id);
-                },
-                
-                clear() {
-                    this.items = [];
-                }
-            });
         });
-        
-        // CSRF token setup for AJAX requests
+
         function getCookie(name) {
             let cookieValue = null;
             if (document.cookie && document.cookie !== '') {
@@ -435,12 +869,8 @@ x-init="
             }
             return cookieValue;
         }
-        
-        // Set CSRF token for all AJAX requests
         const csrftoken = getCookie('csrftoken');
-        if (csrftoken) {
-            window.DidactAI.csrfToken = csrftoken;
-        }
+        if (csrftoken) window.DidactAI.csrfToken = csrftoken;
     </script>
     
     {% block extra_js %}{% endblock %}

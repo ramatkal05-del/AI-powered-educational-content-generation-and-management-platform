@@ -1,109 +1,282 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ title }}</title>
+    <title>{{ title|default:"DidactAI — Scholarly AI Education Platform" }}</title>
+    <meta name="description" content="{{ description|default:'DidactAI — AI-powered educational content management for the modern scholar.' }}">
+
+    <!-- Academia Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;500;600&family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=Crimson+Pro:ital,wght@0,400;1,400&display=swap" rel="stylesheet">
+
     <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    {% load static %}
+
+    <style>
+        :root {
+            --bg:      #1C1714;
+            --bg-alt:  #251E19;
+            --fg:      #E8DFD4;
+            --ink:     #9C8B7A;
+            --border:  #4A3F35;
+            --brass:   #C9A962;
+            --brass-l: #D4B872;
+            --brass-d: #B8953F;
+            --crimson: #8B2635;
+        }
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body {
+            margin: 0; min-height: 100%;
+            background-color: var(--bg); color: var(--fg);
+            font-family: 'Crimson Pro', serif;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* Fixed atmospheric overlays */
+        .vignette {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9999;
+            background: radial-gradient(ellipse at center, transparent 0%, transparent 52%, rgba(28,23,20,0.6) 100%);
+        }
+        .texture {
+            position: fixed; inset: 0; pointer-events: none; z-index: 9998; opacity: 0.03;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+            mix-blend-mode: overlay;
+        }
+
+        /* Ornate divider */
+        .divider {
+            position: relative; height: 1px; margin: 2rem auto; max-width: 16rem;
+            background: linear-gradient(90deg, transparent, var(--border) 25%, var(--brass) 50%, var(--border) 75%, transparent);
+        }
+        .divider::before {
+            content: "✶"; position: absolute; left: 50%; top: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--brass); font-size: 0.625rem;
+            background: var(--bg); padding: 0 0.75rem; line-height: 1;
+        }
+
+        /* Brass gradient button */
+        .btn-brass {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            font-family: 'Cinzel', serif; font-size: 0.6875rem; font-weight: 600;
+            letter-spacing: 0.15em; text-transform: uppercase; white-space: nowrap;
+            text-shadow: 1px 1px 1px rgba(0,0,0,0.4), -1px -1px 1px rgba(255,255,255,0.1);
+            color: var(--bg);
+            background: linear-gradient(180deg, var(--brass-l) 0%, var(--brass) 50%, var(--brass-d) 100%);
+            border: none; border-radius: 4px;
+            padding: 0.75rem 2rem; height: 3rem; cursor: pointer; text-decoration: none;
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), inset 0 -1px 0 rgba(0,0,0,0.2), 0 2px 8px rgba(0,0,0,0.3);
+            transition: filter 300ms ease, box-shadow 300ms ease;
+        }
+        .btn-brass:hover {
+            filter: brightness(1.1);
+            box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 4px 14px rgba(201,169,98,0.4);
+        }
+
+        /* Outline button */
+        .btn-outline {
+            display: inline-flex; align-items: center; justify-content: center; gap: 0.5rem;
+            font-family: 'Cinzel', serif; font-size: 0.6875rem; font-weight: 600;
+            letter-spacing: 0.15em; text-transform: uppercase; white-space: nowrap;
+            color: var(--brass);
+            background: transparent; border: 2px solid var(--brass);
+            border-radius: 4px; padding: 0.6875rem 2rem; height: 3rem; cursor: pointer; text-decoration: none;
+            transition: background 300ms ease, border-color 300ms ease, color 300ms ease;
+        }
+        .btn-outline:hover {
+            background: var(--crimson); border-color: var(--crimson); color: var(--fg);
+        }
+
+        /* Feature cards */
+        .feat-card {
+            background: var(--bg-alt); border: 1px solid var(--border); border-radius: 4px;
+            padding: 1.75rem; position: relative; transition: border-color 300ms ease, box-shadow 300ms ease;
+        }
+        .feat-card:hover { border-color: rgba(201,169,98,0.35); box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .feat-card::before, .feat-card::after {
+            content: ""; position: absolute; width: 20px; height: 20px; border: 1px solid rgba(201,169,98,0.35);
+            transition: border-color 300ms ease;
+        }
+        .feat-card::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+        .feat-card::after  { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+        .feat-card:hover::before, .feat-card:hover::after { border-color: var(--brass); }
+
+        /* Roman numeral glyph */
+        .glyph {
+            font-family: 'Cinzel', serif; font-size: 1.25rem;
+            color: var(--brass); margin-bottom: 0.75rem; display: block;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after { transition-duration: 0.01ms !important; }
+        }
+    </style>
 </head>
-<body class="bg-gray-50 min-h-screen">
-    <div class="min-h-screen flex flex-col justify-center items-center">
-        <div class="text-center">
-            <div class="mb-8">
-                {% load static %}
-                <div class="flex justify-center mb-6">
-                    <img src="{% static 'images/logo-professional.svg' %}" alt="DidactAI Logo" class="h-24 w-auto max-w-md" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                    <div style="display: none;" class="flex items-center justify-center p-6 bg-gradient-to-r from-blue-800 via-blue-600 to-cyan-500 rounded-xl shadow-lg max-w-md">
-                        <!-- Icon-like visual element -->
-                        <div class="flex items-center">
-                            <div class="w-16 h-16 bg-white bg-opacity-20 rounded-full flex items-center justify-center mr-4">
-                                <div class="w-10 h-8 bg-white rounded-sm opacity-90 flex items-center justify-center">
-                                    <div class="w-8 h-6 bg-blue-600 rounded-sm flex">
-                                        <div class="w-1/2 border-r border-white border-opacity-50"></div>
-                                        <div class="w-1/2"></div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="text-center">
-                                <h1 class="text-3xl font-bold text-white mb-1">Didact<span class="text-orange-300">AI</span></h1>
-                                <p class="text-blue-100 text-xs">Intelligent, Adaptive Educational Platform</p>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                <p class="text-xl text-gray-600 max-w-2xl mx-auto">
-                    {{ description }}
-                </p>
-            </div>
+<body>
+    <div class="vignette" aria-hidden="true"></div>
+    <div class="texture" aria-hidden="true"></div>
+
+    <main>
+
+        <!-- ═══ HERO ═══ -->
+        <section style="min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 5rem 1.5rem 3rem; text-align: center;">
             
-            <div class="space-y-4">
+            <!-- Brass crest -->
+            {% load static %}
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 5rem; height: 5rem; border-radius: 50%; background: linear-gradient(180deg, #D4B872 0%, #B8953F 100%); box-shadow: inset 0 2px 6px rgba(255,255,255,0.2), 0 6px 20px rgba(0,0,0,0.5); margin-bottom: 2rem;">
+                <img src="{% static 'images/logo-icon-pro.svg' %}" alt="DidactAI Crest" 
+                     style="width: 2.75rem; height: 2.75rem; filter: brightness(0.1);"
+                     onerror="this.style.display='none';">
+            </div>
+
+            <!-- Overline — Cinzel label -->
+            <p style="font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.35em; text-transform: uppercase; color: var(--brass); margin-bottom: 0.5rem;">
+                Est. MMXXIV &nbsp;·&nbsp; Academic AI Platform
+            </p>
+
+            <!-- Main title -->
+            <h1 style="font-family: 'Cormorant Garamond', serif; font-size: clamp(3rem, 7vw, 5.5rem); font-weight: 600; line-height: 1.05; color: var(--fg); margin: 0 0 1.25rem; max-width: 820px;">
+                DidactAI
+            </h1>
+
+            <!-- Subtitle -->
+            <p style="font-family: 'Crimson Pro', serif; font-size: clamp(1rem, 2vw, 1.375rem); font-style: italic; color: var(--ink); max-width: 540px; line-height: 1.7; margin: 0 auto 2.5rem;">
+                {{ description|default:"An AI-powered educational content platform for the discerning scholar — generating quizzes, exams, and course materials with scholarly precision." }}
+            </p>
+
+            <!-- CTAs -->
+            <div style="display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-bottom: 1.5rem;">
                 {% if user.is_authenticated %}
-                    <a href="{% url 'core:dashboard' %}" 
-                       class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                        Go to Dashboard
+                    <a href="{% url 'core:dashboard' %}" class="btn-brass">
+                        <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 13.125C3 12.504 3.504 12 4.125 12h2.25c.621 0 1.125.504 1.125 1.125v6.75C7.5 20.496 6.996 21 6.375 21h-2.25A1.125 1.125 0 013 19.875v-6.75z"/>
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 8.625c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125v11.25c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V8.625zM16.5 4.125c0-.621.504-1.125 1.125-1.125h2.25C20.496 3 21 3.504 21 4.125v15.75c0 .621-.504 1.125-1.125 1.125h-2.25a1.125 1.125 0 01-1.125-1.125V4.125z"/>
+                        </svg>
+                        Enter the Archive
                     </a>
-                    <p class="text-gray-600">Welcome back, {{ user.get_full_name|default:user.username }}!</p>
+                    <p style="width: 100%; font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 1rem;">
+                        Welcome back, {{ user.get_full_name|default:user.username }}.
+                    </p>
                 {% else %}
-                    <div class="space-x-4">
-                        <a href="{% url 'accounts:register' %}" 
-                           class="inline-block bg-blue-600 text-white px-8 py-3 rounded-lg font-semibold hover:bg-blue-700 transition duration-300">
-                            <i class="fas fa-user-plus mr-2"></i>Get Started
-                        </a>
-                        <a href="{% url 'accounts:login' %}" 
-                           class="inline-block border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg font-semibold hover:bg-blue-600 hover:text-white transition duration-300">
-                            <i class="fas fa-sign-in-alt mr-2"></i>Login
-                        </a>
-                    </div>
-                    <div class="mt-4">
-                        <a href="/admin/" class="text-sm text-gray-500 hover:text-gray-700">
-                            Admin Panel
-                        </a>
-                    </div>
+                    <a href="{% url 'accounts:register' %}" class="btn-brass">
+                        <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12c0-1.232.046-2.453.138-3.662a4.006 4.006 0 013.7-3.7 48.678 48.678 0 017.324 0 4.006 4.006 0 013.7 3.7c.017.22.032.441.046.662M4.5 12l-3-3m3 3l3-3m12 3c0 1.232-.046 2.453-.138 3.662a4.006 4.006 0 01-3.7 3.7 48.656 48.656 0 01-7.324 0 4.006 4.006 0 01-3.7-3.7A48.574 48.574 0 0112 12m9 0l-3 3m3-3l-3-3"/>
+                        </svg>
+                        Begin Enrolment
+                    </a>
+                    <a href="{% url 'accounts:login' %}" class="btn-outline">
+                        <svg style="width:1rem;height:1rem;" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="1.5" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75"/>
+                        </svg>
+                        Sign In
+                    </a>
                 {% endif %}
             </div>
-            
-            <div class="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <i class="fas fa-robot text-3xl text-blue-600 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">AI-Powered Generation</h3>
-                    <p class="text-gray-600">Generate quizzes, exams, and educational content using Gemini AI with advanced natural language processing</p>
+
+            {% if not user.is_authenticated %}
+            <a href="/admin/" style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--border); text-decoration: none; transition: color 200ms ease;"
+               onmouseover="this.style.color='var(--brass)'" onmouseout="this.style.color='var(--border)'">
+                Admin Panel
+            </a>
+            {% endif %}
+
+            <!-- Ornate divider -->
+            <div class="divider" style="margin-top: 3.5rem;"></div>
+        </section>
+
+        <!-- ═══ FEATURES — Primary ═══ -->
+        <section style="padding: 0 1.5rem 5rem;">
+            <div style="max-width: 1100px; margin: 0 auto;">
+
+                <!-- Section label -->
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <p style="font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass);">
+                        Volume I — Core Disciplines
+                    </p>
+                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: clamp(1.75rem, 4vw, 2.75rem); font-weight: 400; color: var(--fg); margin: 0.5rem 0 0;">
+                        What the Archive Offers
+                    </h2>
                 </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <i class="fas fa-chart-line text-3xl text-green-600 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">Advanced Analytics</h3>
-                    <p class="text-gray-600">Track usage, performance, and engagement with comprehensive real-time analytics and reporting</p>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <i class="fas fa-globe text-3xl text-purple-600 mb-4"></i>
-                    <h3 class="text-lg font-semibold mb-2">Multilingual Support</h3>
-                    <p class="text-gray-600">Support for 14 languages including Arabic, Chinese, Japanese, Korean, Hindi, Turkish, and Greek</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1.5rem;">
+
+                    <div class="feat-card">
+                        <span class="glyph">✦</span>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-weight: 500; color: var(--fg); margin: 0 0 0.5rem;">AI-Powered Generation</h3>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 1rem; line-height: 1.7; margin: 0;">
+                            Generate quizzes, exams, and educational content using Gemini AI with advanced natural language processing.
+                        </p>
+                    </div>
+
+                    <div class="feat-card">
+                        <span class="glyph">❧</span>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-weight: 500; color: var(--fg); margin: 0 0 0.5rem;">Advanced Analytics</h3>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 1rem; line-height: 1.7; margin: 0;">
+                            Track usage, performance, and engagement with comprehensive real-time analytics and reporting.
+                        </p>
+                    </div>
+
+                    <div class="feat-card">
+                        <span class="glyph">✶</span>
+                        <h3 style="font-family: 'Cormorant Garamond', serif; font-size: 1.375rem; font-weight: 500; color: var(--fg); margin: 0 0 0.5rem;">Multilingual Support</h3>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 1rem; line-height: 1.7; margin: 0;">
+                            Support for 14 languages — Arabic, Chinese, Japanese, Korean, Hindi, Turkish, Greek and more.
+                        </p>
+                    </div>
+
                 </div>
             </div>
-            
-            <!-- Additional Features -->
-            <div class="mt-8 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-5xl mx-auto">
-                <div class="bg-white p-6 rounded-lg shadow-md text-center">
-                    <i class="fas fa-file-export text-3xl text-indigo-600 mb-4"></i>
-                    <h4 class="font-semibold text-gray-800 mb-2">Professional Exports</h4>
-                    <p class="text-sm text-gray-600">Export to PDF, DOCX, and HTML formats with custom university branding and watermarks</p>
+        </section>
+
+        <!-- ═══ FEATURES — Secondary ═══ -->
+        <section style="padding: 3rem 1.5rem 6rem; border-top: 1px solid var(--border);">
+            <div style="max-width: 1000px; margin: 0 auto;">
+
+                <div style="text-align: center; margin-bottom: 2.5rem;">
+                    <p style="font-family: 'Cinzel', serif; font-size: 0.55rem; letter-spacing: 0.3em; text-transform: uppercase; color: var(--brass);">
+                        Volume II — Advanced Capabilities
+                    </p>
+                    <h2 style="font-family: 'Cormorant Garamond', serif; font-size: clamp(1.5rem, 3.5vw, 2.25rem); font-weight: 400; color: var(--fg); margin: 0.5rem 0 0;">
+                        The Scholarly Toolkit
+                    </h2>
                 </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md text-center">
-                    <i class="fas fa-code-branch text-3xl text-orange-600 mb-4"></i>
-                    <h4 class="font-semibold text-gray-800 mb-2">Version Control</h4>
-                    <p class="text-sm text-gray-600">Generate multiple versions (A, B, C) with different question orders for secure assessment distribution</p>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md text-center">
-                    <i class="fas fa-graduation-cap text-3xl text-teal-600 mb-4"></i>
-                    <h4 class="font-semibold text-gray-800 mb-2">Course Management</h4>
-                    <p class="text-sm text-gray-600">Organize courses, upload materials, and manage educational content with advanced file processing</p>
+
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem;">
+
+                    <div class="feat-card" style="padding: 1.25rem;">
+                        <span style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brass); display: block; margin-bottom: 0.5rem;">I</span>
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--fg); margin: 0 0 0.4rem;">Professional Exports</h4>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 0.9375rem; line-height: 1.6; margin: 0;">Export to PDF, DOCX, and HTML with custom university branding and watermarks.</p>
+                    </div>
+
+                    <div class="feat-card" style="padding: 1.25rem;">
+                        <span style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brass); display: block; margin-bottom: 0.5rem;">II</span>
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--fg); margin: 0 0 0.4rem;">Version Control</h4>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 0.9375rem; line-height: 1.6; margin: 0;">Generate multiple versions (A, B, C) with different question orders for secure assessment.</p>
+                    </div>
+
+                    <div class="feat-card" style="padding: 1.25rem;">
+                        <span style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.2em; text-transform: uppercase; color: var(--brass); display: block; margin-bottom: 0.5rem;">III</span>
+                        <h4 style="font-family: 'Cormorant Garamond', serif; font-size: 1.25rem; color: var(--fg); margin: 0 0 0.4rem;">Course Management</h4>
+                        <p style="font-family: 'Crimson Pro', serif; font-style: italic; color: var(--ink); font-size: 0.9375rem; line-height: 1.6; margin: 0;">Organise courses, upload materials, and manage content with advanced file processing.</p>
+                    </div>
+
                 </div>
             </div>
-        </div>
-    </div>
+        </section>
+
+        <!-- ═══ FOOTER ═══ -->
+        <footer style="border-top: 1px solid var(--border); padding: 2rem 1.5rem; text-align: center;">
+            <p style="font-family: 'Cinzel', serif; font-size: 0.5rem; letter-spacing: 0.25em; text-transform: uppercase; color: var(--border); margin: 0;">
+                DidactAI &nbsp;·&nbsp; Est. MMXXIV &nbsp;·&nbsp; All Rights Reserved
+            </p>
+            <p style="font-family: 'Cormorant Garamond', serif; font-style: italic; color: var(--border); font-size: 0.875rem; margin: 0.5rem 0 0;">
+                "Docendo discimus" — By teaching we learn.
+            </p>
+        </footer>
+
+    </main>
 </body>
 </html>

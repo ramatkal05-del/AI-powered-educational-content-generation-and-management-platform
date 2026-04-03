@@ -11,7 +11,7 @@ import os
 DEBUG = False
 
 # Production hosts - update with your domain
-ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com']
+ALLOWED_HOSTS = ['yourdomain.com', 'www.yourdomain.com', 'didactia.onrender.com']
 
 # Database - Use PostgreSQL in production
 DATABASES = {

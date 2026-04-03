@@ -123,9 +123,10 @@ def create_default_templates():
     </div>
     
     <div class="quiz-info">
-        <div>Date: _______________</div>
-        <div>Student Name: _______________________________</div>
-        <div>Student ID: _______________</div>
+        <div>Date: ___________________________</div>
+        <div>Student Name: ___________________</div>
+        <div>Student ID: _____________________</div>
+        <div>Signature:  _____________________</div>
     </div>
     
     {% if include_instructions %}

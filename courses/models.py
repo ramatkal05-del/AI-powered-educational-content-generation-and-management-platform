@@ -125,17 +125,16 @@ class Course(models.Model):
         verbose_name = _('Course')
         verbose_name_plural = _('Courses')
         ordering = ['-updated_at']
-        unique_together = ['instructor', 'slug']
+        # Note: slug has unique=True on the field itself — no need for unique_together.
+
         
     def save(self, *args, **kwargs):
         if not self.slug:
             base_slug = slugify(self.title)
             slug = base_slug
             counter = 1
-            while Course.objects.filter(
-                instructor=self.instructor, 
-                slug=slug
-            ).exclude(pk=self.pk).exists():
+            # Check for global uniqueness since slug field has unique=True
+            while Course.objects.filter(slug=slug).exclude(pk=self.pk).exists():
                 slug = f"{base_slug}-{counter}"
                 counter += 1
             self.slug = slug

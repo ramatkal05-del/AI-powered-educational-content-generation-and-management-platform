@@ -2,17 +2,21 @@
 Forms for user authentication and registration
 """
 
+import logging
+
 from django import forms
 from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger(__name__)
 
 User = get_user_model()
 
 
 class CustomUserCreationForm(UserCreationForm):
     """Custom user registration form"""
-    
+
     first_name = forms.CharField(
         max_length=30,
         required=True,
@@ -21,7 +25,7 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'First Name'
         })
     )
-    
+
     last_name = forms.CharField(
         max_length=30,
         required=True,
@@ -30,7 +34,7 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Last Name'
         })
     )
-    
+
     email = forms.EmailField(
         required=True,
         widget=forms.EmailInput(attrs={
@@ -38,21 +42,21 @@ class CustomUserCreationForm(UserCreationForm):
             'placeholder': 'Email Address'
         })
     )
-    
+
     username = forms.CharField(
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
             'placeholder': 'Username'
         })
     )
-    
+
     password1 = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
             'placeholder': 'Password'
         })
     )
-    
+
     password2 = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
@@ -66,54 +70,37 @@ class CustomUserCreationForm(UserCreationForm):
 
     def clean_email(self):
         """Validate email is unique"""
-        try:
-            email = self.cleaned_data.get('email')
-            if email and User.objects.filter(email=email).exists():
-                raise forms.ValidationError(_("This email address is already in use."))
-            return email
-        except Exception as e:
-            print(f"[REGISTER] Email validation error: {e}")
-            raise
-    
+        email = self.cleaned_data.get('email')
+        if email and User.objects.filter(email=email).exists():
+            raise forms.ValidationError(_("This email address is already in use."))
+        return email
+
     def save(self, commit=True):
         try:
             user = super().save(commit=False)
             user.email = self.cleaned_data['email']
             user.first_name = self.cleaned_data['first_name']
             user.last_name = self.cleaned_data['last_name']
-            
+
             if commit:
                 user.save()
-                # Create user profile
-                try:
-                    from .models import UserProfile
-                    UserProfile.objects.create(
-                        user=user,
-                        timezone='UTC'  # Default timezone
-                    )
-                except Exception as e:
-                    print(f"[REGISTER] Error creating user profile: {e}")
-                    import traceback
-                    traceback.print_exc()
-            
+                # UserProfile is created by a post_save signal in accounts/signals.py
             return user
-        except Exception as e:
-            print(f"[REGISTER] Error saving user: {e}")
-            import traceback
-            traceback.print_exc()
+        except Exception:
+            logger.exception("[REGISTER] Error saving user")
             raise
 
 
 class CustomAuthenticationForm(AuthenticationForm):
     """Custom login form with styling"""
-    
+
     username = forms.CharField(
         widget=forms.TextInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
             'placeholder': 'Username or Email'
         })
     )
-    
+
     password = forms.CharField(
         widget=forms.PasswordInput(attrs={
             'class': 'w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500',
@@ -124,7 +111,7 @@ class CustomAuthenticationForm(AuthenticationForm):
 
 class ProfileUpdateForm(forms.ModelForm):
     """Form for updating user profile"""
-    
+
     class Meta:
         model = User
         fields = ['first_name', 'last_name', 'email']
@@ -143,7 +130,7 @@ class ProfileUpdateForm(forms.ModelForm):
 
 class UserProfileForm(forms.ModelForm):
     """Form for updating user profile settings"""
-    
+
     class Meta:
         from .models import UserProfile
         model = UserProfile
@@ -157,7 +144,7 @@ class UserProfileForm(forms.ModelForm):
 
 class ExtendedProfileForm(forms.ModelForm):
     """Form for updating extended user profile (CustomUser fields)"""
-    
+
     class Meta:
         from .models import CustomUser
         model = CustomUser

@@ -219,13 +219,46 @@ def export_generation(request, generation_id):
                 'has_logo': 'university_logo' in request.FILES
             })
             
-            # Handle logo upload if present
+            # Handle logo upload if present - save first to ensure file is accessible
+            export_job.save()  # Save first to ensure file is saved to disk
+            
             if export_job.university_logo:
-                # Update branding settings with logo information
-                export_job.branding_settings['logo_path'] = export_job.university_logo.path
-                export_job.branding_settings['logo_url'] = export_job.university_logo.url
-                export_job.branding_settings['logo_filename'] = export_job.university_logo.name
-            export_job.save()
+                try:
+                    # Get the absolute path to the logo file
+                    import os
+                    from django.conf import settings
+                    
+                    logo_path = export_job.university_logo.path
+                    logo_url = export_job.university_logo.url
+                    
+                    # Verify the file exists
+                    if os.path.exists(logo_path):
+                        # Update branding settings with logo information
+                        export_job.branding_settings['logo_path'] = logo_path
+                        export_job.branding_settings['logo_url'] = logo_url
+                        export_job.branding_settings['logo_filename'] = export_job.university_logo.name
+                        export_job.branding_settings['has_logo'] = True
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.info(f"Logo successfully added: {logo_path}")
+                    else:
+                        import logging
+                        logger = logging.getLogger(__name__)
+                        logger.warning(f"Logo file not found at path: {logo_path}")
+                        # Try alternative path resolution
+                        if logo_url.startswith('/media/'):
+                            alt_path = os.path.join(settings.MEDIA_ROOT, logo_url.replace('/media/', ''))
+                            if os.path.exists(alt_path):
+                                export_job.branding_settings['logo_path'] = alt_path
+                                export_job.branding_settings['logo_url'] = logo_url
+                                export_job.branding_settings['has_logo'] = True
+                                logger.info(f"Logo found at alternative path: {alt_path}")
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.error(f"Error processing logo: {e}")
+            
+            export_job.save()  # Save again with updated branding settings
             
             if create_versions and export_format == 'pdf':
                 # Create multiple versions for exams
@@ -371,10 +404,10 @@ def test_clean_export(request):
     
     branding = {
         'university_name': 'Technical University',
-        'department': 'Computer Science Department',
-        'course': 'CS 4800 - Cloud Computing',
-        'semester': 'Fall 2024',
-        'instructor': 'Dr. Smith'
+        'department': 'Software engineering  Department',
+        'course': 'Sofe 406 - Automata',
+        'semester': 'Fall 2025',
+        'instructor': 'Dr. Lawrence'
     }
     
     try:

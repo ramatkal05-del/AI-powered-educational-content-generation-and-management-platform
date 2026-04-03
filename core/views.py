@@ -160,6 +160,84 @@ def test_notification(request):
 
 
 @login_required
+def search(request):
+    """Global search across courses/files/generations/exports."""
+    from django.db.models import Q
+    from courses.models import Course
+    from uploads.models import UploadedFile
+    from ai_generator.models import AIGeneration
+    from exports.models import ExportJob
+
+    q = (request.GET.get('q') or '').strip()
+
+    # Scope results
+    if request.user.is_superuser:
+        courses_qs = Course.objects.all()
+        files_qs = UploadedFile.objects.all()
+        generations_qs = AIGeneration.objects.all()
+        exports_qs = ExportJob.objects.all()
+    else:
+        courses_qs = Course.objects.filter(instructor=request.user)
+        files_qs = UploadedFile.objects.filter(course__instructor=request.user)
+        generations_qs = AIGeneration.objects.filter(course__instructor=request.user)
+        exports_qs = ExportJob.objects.filter(course__instructor=request.user)
+
+    courses = []
+    files = []
+    generations = []
+    exports = []
+
+    if q:
+        courses = list(
+            courses_qs.filter(
+                Q(title__icontains=q)
+                | Q(course_code__icontains=q)
+                | Q(description__icontains=q)
+                | Q(department__icontains=q)
+            )
+            .order_by('-updated_at')[:20]
+        )
+
+        files = list(
+            files_qs.filter(
+                Q(original_filename__icontains=q)
+                | Q(description__icontains=q)
+                | Q(extracted_text__icontains=q)
+            )
+            .order_by('-created_at')[:20]
+        )
+
+        generations = list(
+            generations_qs.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(content_type__icontains=q)
+            )
+            .order_by('-created_at')[:20]
+        )
+
+        exports = list(
+            exports_qs.filter(
+                Q(title__icontains=q)
+                | Q(description__icontains=q)
+                | Q(export_format__icontains=q)
+            )
+            .order_by('-created_at')[:20]
+        )
+
+    context = {
+        'title': 'Search',
+        'query': q,
+        'courses': courses,
+        'files': files,
+        'generations': generations,
+        'exports': exports,
+        'total_count': len(courses) + len(files) + len(generations) + len(exports),
+    }
+    return render(request, 'core/search.html', context)
+
+
+@login_required
 def activity(request):
     """Activity page view"""
     try:

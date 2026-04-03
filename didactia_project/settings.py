@@ -1,25 +1,17 @@
-﻿"""
-Django settings for DidactAI project.
-
-A comprehensive educational content management and AI generation platform.
-"""
 
 import os
 from pathlib import Path
 from decouple import config
 import dj_database_url
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
+
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-# SECURITY WARNING: keep the secret key used in production secret!
+
 SECRET_KEY = config('SECRET_KEY', default='django-insecure-change-me-in-production')
 
-# SECURITY WARNING: don't run with debug turned on in production!
-# Temporarily enable DEBUG on Render to diagnose issues
-DEBUG = config('DEBUG', default=True, cast=bool)
-if 'onrender.com' in config('ALLOWED_HOSTS', default='localhost'):
-    DEBUG = True  # Force DEBUG=True on Render for now
+
+DEBUG = config('DEBUG', default=False, cast=bool)
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='localhost,127.0.0.1,testserver,didactai.onrender.com', cast=lambda v: [s.strip() for s in v.split(',')])
 
@@ -56,16 +48,15 @@ SITE_ID = 1
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'whitenoise.middleware.WhiteNoiseMiddleware',
-    'didactia_project.middleware.DatabaseInitializationMiddleware',  # Initialize database on first request
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.locale.LocaleMiddleware',  # For i18n
-    # 'core.i18n.LanguageMiddleware',  # Custom language detection - keep disabled to stay in English
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
+
 
 ROOT_URLCONF = 'didactia_project.urls'
 
@@ -196,7 +187,7 @@ FILE_UPLOAD_MAX_MEMORY_SIZE = config('MAX_UPLOAD_SIZE', default=50000000, cast=i
 DATA_UPLOAD_MAX_MEMORY_SIZE = config('MAX_UPLOAD_SIZE', default=50000000, cast=int)
 
 # AI Configuration
-GEMINI_API_KEY = config('GEMINI_API_KEY', default='')
+OPENAI_API_KEY = config('OPENAI_API_KEY', default='')
 HUGGINGFACE_API_TOKEN = config('HUGGINGFACE_API_TOKEN', default='')
 
 # Storage Configuration
@@ -248,8 +239,8 @@ LOGIN_URL = '/accounts/login/'
 LOGIN_REDIRECT_URL = '/dashboard/'
 LOGOUT_REDIRECT_URL = '/'
 
-# Email Configuration - Use SMTP backend for password reset to work
-# Use console for development, SMTP for production or when email is configured
+# Email Configuration
+# (Kept minimal; password reset + notification emails are disabled/removed.)
 EMAIL_HOST = config('EMAIL_HOST', default='smtp.gmail.com')
 EMAIL_PORT = config('EMAIL_PORT', default=587, cast=int)
 EMAIL_USE_TLS = config('EMAIL_USE_TLS', default=True, cast=bool)
@@ -260,27 +251,28 @@ DEFAULT_FROM_EMAIL = config('DEFAULT_FROM_EMAIL', default='DidactAI <noreply@did
 SERVER_EMAIL = config('SERVER_EMAIL', default='DidactAI <noreply@didactai.com>')
 SERVER_NAME = config('SERVER_NAME', default='localhost:8000')
 
-# Choose email backend based on configuration
+# Choose email backend based on configuration (no console prints)
 if EMAIL_HOST_USER and EMAIL_HOST_PASSWORD:
     EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-    print("✓ SMTP email backend configured for password reset functionality")
 else:
     EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
-    print("⚠ Using console email backend - password reset emails will appear in console")
-    print("  Configure EMAIL_HOST_USER and EMAIL_HOST_PASSWORD for actual email delivery")
 
 # Security Settings for Production
 if not DEBUG:
-    # Disable SSL redirect for now to avoid redirect loops
-    SECURE_SSL_REDIRECT = False  # Temporarily disabled
+    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    # Disable secure cookies for now to ensure login works
-    SESSION_COOKIE_SECURE = False
-    CSRF_COOKIE_SECURE = False
-    # Keep HSTS settings
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
     SECURE_HSTS_SECONDS = 31536000
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
+    SECURE_CONTENT_TYPE_NOSNIFF = True
+    SECURE_BROWSER_XSS_FILTER = True
+    # CORS settings for production
+    CORS_ALLOWED_ORIGINS = [
+        'https://didactai.onrender.com',
+    ]
+    CORS_ALLOW_CREDENTIALS = True
 
 # Logging Configuration
 LOGGING = {
@@ -308,7 +300,7 @@ DidactAI_SETTINGS = {
     'ALLOWED_FILE_EXTENSIONS': config('ALLOWED_FILE_EXTENSIONS', default='pdf,docx,pptx,png,jpg,jpeg', cast=lambda v: [s.strip() for s in v.split(',')]),
     'MAX_FILE_SIZE': config('MAX_UPLOAD_SIZE', default=50000000, cast=int),
     'SUPPORTED_LANGUAGES': config('SUPPORTED_LANGUAGES', default='en,fr,es,de,it,pt,ru,ar,zh,ja,ko,hi,tr,el', cast=lambda v: [s.strip() for s in v.split(',')]),
-    'DEFAULT_AI_MODEL': 'gemini-2.5-flash',
+    'DEFAULT_AI_MODEL': 'gpt-5.2',
     'EXAM_VERSIONS_COUNT': 3,  # A, B, C versions
     'AUTO_DELETE_DAYS': 90,  # Auto-delete old files after 90 days
     'ENABLE_VERSIONING': True,  # Enable content versioning
@@ -318,29 +310,9 @@ DidactAI_SETTINGS = {
     'DEFAULT_TRANSLATION_SERVICE': 'google_translate',
 }
 
+# AI Configuration
+DEFAULT_AI_MODEL = config('DEFAULT_AI_MODEL', default='gpt-4o')
+
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# Production configurations
-if not DEBUG:
-    # Security settings for production
-    SECURE_SSL_REDIRECT = config('SECURE_SSL_REDIRECT', default=True, cast=bool)
-    SECURE_HSTS_SECONDS = 31536000  # 1 year
-    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
-    SECURE_HSTS_PRELOAD = True
-    SECURE_CONTENT_TYPE_NOSNIFF = True
-    SECURE_BROWSER_XSS_FILTER = True
-    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
-    
-    # Static file serving in production - Use simple storage temporarily
-    STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
-    
-    # CORS settings for production
-    CORS_ALLOWED_ORIGINS = [
-        'https://didactai.onrender.com',
-    ]
-    CORS_ALLOW_CREDENTIALS = True
-
-# Crispy Forms Configuration  
-CRISPY_ALLOWED_TEMPLATE_PACKS = 'tailwind'
-CRISPY_TEMPLATE_PACK = 'tailwind'
 

@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Search{% endblock %}
+{% block page_title %}Search{% endblock %}
+{% block page_description %}Search courses, files, generations, and exports{% endblock %}
+
+{% block content %}
+<div class="px-4 sm:px-6 lg:px-8 py-6">
+  <div class="max-w-5xl mx-auto">
+    <form method="get" action="{% url 'core:search' %}" class="mb-6">
+      <div class="flex gap-2">
+        <input
+          type="search"
+          name="q"
+          value="{{ query }}"
+          placeholder="Search..."
+          class="w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary-500"
+        />
+        <button
+          type="submit"
+          class="px-4 py-2 rounded-md bg-primary-600 text-white font-medium hover:bg-primary-700"
+        >
+          Search
+        </button>
+      </div>
+    </form>
+
+    {% if not query %}
+      <div class="bg-white shadow rounded-lg p-6 text-gray-700">
+        Type something in the search bar to start.
+      </div>
+    {% else %}
+      <div class="mb-4 text-sm text-gray-600">
+        {{ total_count }} result{{ total_count|pluralize }} for <span class="font-medium text-gray-900">"{{ query }}"</span>
+      </div>
+
+      {% if total_count == 0 %}
+        <div class="bg-white shadow rounded-lg p-6 text-gray-700">
+          No results found.
+        </div>
+      {% endif %}
+
+      {% if courses %}
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Courses</h3>
+          </div>
+          <div class="divide-y divide-gray-100">
+            {% for c in courses %}
+              <a href="{% url 'courses:detail' c.pk %}" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="font-medium text-gray-900">{{ c.title }}</div>
+                <div class="text-sm text-gray-600">
+                  {% if c.course_code %}{{ c.course_code }} · {% endif %}{{ c.department|default:"" }}
+                </div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if files %}
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Files</h3>
+          </div>
+          <div class="divide-y divide-gray-100">
+            {% for f in files %}
+              <a href="{% url 'uploads:detail' f.id %}" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="font-medium text-gray-900">{{ f.original_filename }}</div>
+                <div class="text-sm text-gray-600">{{ f.course.title }}</div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if generations %}
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">AI Generations</h3>
+          </div>
+          <div class="divide-y divide-gray-100">
+            {% for g in generations %}
+              <a href="{% url 'ai_generator:view_generation' g.id %}" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="font-medium text-gray-900">{{ g.title }}</div>
+                <div class="text-sm text-gray-600">{{ g.get_content_type_display }} · {{ g.course.title }}</div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+
+      {% if exports %}
+        <div class="bg-white shadow rounded-lg mb-6">
+          <div class="px-6 py-4 border-b border-gray-200">
+            <h3 class="text-lg font-medium text-gray-900">Exports</h3>
+          </div>
+          <div class="divide-y divide-gray-100">
+            {% for e in exports %}
+              <a href="{% url 'exports:detail' e.pk %}" class="block px-6 py-4 hover:bg-gray-50">
+                <div class="font-medium text-gray-900">{{ e.title }}</div>
+                <div class="text-sm text-gray-600">{{ e.get_export_format_display }} · {{ e.course.title }}</div>
+              </a>
+            {% endfor %}
+          </div>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

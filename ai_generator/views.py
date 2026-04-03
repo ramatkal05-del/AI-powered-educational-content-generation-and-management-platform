@@ -10,6 +10,9 @@ from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from django.utils import timezone
 import json
+import logging
+
+logger = logging.getLogger(__name__)
 
 from .models import AIGeneration, GenerationTemplate, GenerationVersion, QuizQuestion
 from .services import QuizGenerator, ExamGenerator, ContentAnalyzer
@@ -610,7 +613,7 @@ def exam_generator(request):
                     # Fallback to template-based generation
                     result = _generate_fallback_exam(topic, difficulty, num_questions, duration, question_types, question_type_counts)
             except Exception as e:
-                print(f"AI generation failed: {e}")
+                logger.exception("AI generation failed — falling back to content-based template generation")
                 # Fallback to template-based generation with content awareness
                 result = _generate_fallback_exam_with_content(source_content, topic, difficulty, num_questions, duration, question_types, question_type_counts)
             

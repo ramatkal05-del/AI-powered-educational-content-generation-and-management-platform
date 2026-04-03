@@ -1,5 +1,5 @@
 """
-AI Generation Services using Google Gemini API
+AI Generation Services using OpenAI API
 
 This module provides services for generating educational content using AI.
 """
@@ -7,7 +7,8 @@ This module provides services for generating educational content using AI.
 import json
 import time
 from typing import Dict, List, Optional, Any
-import google.generativeai as genai
+
+from openai import OpenAI
 from django.conf import settings
 from langdetect import detect
 import logging
@@ -15,19 +16,23 @@ import logging
 logger = logging.getLogger(__name__)
 
 
-class GeminiService:
-    """Service for interacting with Google Gemini API"""
-    
+class OpenAIService:
+    """Service for interacting with OpenAI API"""
+
     def __init__(self):
-        # Configure Gemini with API key
-        genai.configure(api_key=settings.GEMINI_API_KEY)
-        self.model = genai.GenerativeModel('gemini-2.5-flash')
+        # OpenAI SDK client
+        # https://platform.openai.com/docs/api-reference
+        api_key = getattr(settings, 'OPENAI_API_KEY', None)
+        if not api_key:
+            logger.warning("OPENAI_API_KEY not set in settings")
+        self.client = OpenAI(api_key=api_key) if api_key else None
+        self.model_name = getattr(settings, 'DEFAULT_AI_MODEL', 'gpt-4o')
         self.max_retries = 2
         self.base_delay = 1
     
     def generate_content(self, prompt: str, **kwargs) -> Dict[str, Any]:
         """
-        Generate content using Gemini API with enhanced error handling
+        Generate content using OpenAI API with enhanced error handling
         
         Args:
             prompt: The input prompt
@@ -36,17 +41,36 @@ class GeminiService:
         Returns:
             Dict containing the response and metadata
         """
+        if not self.client:
+            return {
+                'success': False,
+                'content': None,
+                'tokens_used': 0,
+                'processing_time': 0,
+                'error': 'OPENAI_API_KEY not configured'
+            }
+        
         start_time = time.time()
         
         for attempt in range(self.max_retries + 1):
             try:
-                response = self.model.generate_content(prompt)
+                response = self.client.chat.completions.create(
+                    model=self.model_name,
+                    messages=[
+                        {"role": "system", "content": "You are a professional educational content generator. Generate high-quality, accurate educational content."},
+                        {"role": "user", "content": prompt}
+                    ],
+                    temperature=0.7,
+                )
                 processing_time = time.time() - start_time
+                
+                content = response.choices[0].message.content
+                tokens_used = response.usage.total_tokens if hasattr(response, 'usage') else len(prompt.split()) + len(content.split())
                 
                 return {
                     'success': True,
-                    'content': response.text,
-                    'tokens_used': len(prompt.split()) + len(response.text.split()),  # Approximate
+                    'content': content,
+                    'tokens_used': tokens_used,
                     'processing_time': processing_time,
                     'error': None
                 }
@@ -55,15 +79,15 @@ class GeminiService:
                 error_str = str(e)
                 processing_time = time.time() - start_time
                 
-                # Check if it's a quota error
-                if '429' in error_str and 'quota' in error_str.lower():
-                    logger.warning(f"Quota exceeded on attempt {attempt + 1}: {error_str}")
+                # Check if it's a quota/rate limit error
+                if '429' in error_str or 'rate_limit' in error_str.lower() or 'quota' in error_str.lower():
+                    logger.warning(f"Rate limit/quota exceeded on attempt {attempt + 1}: {error_str}")
                     
                     # Extract retry delay if available
                     import re
-                    retry_match = re.search(r'retry in (\d+\.?\d*)s', error_str)
+                    retry_match = re.search(r'retry[_-]?after[:\s]+(\d+)', error_str, re.IGNORECASE)
                     if retry_match and attempt < self.max_retries:
-                        retry_delay = min(float(retry_match.group(1)), 30)  # Cap at 30 seconds
+                        retry_delay = min(float(retry_match.group(1)), 60)  # Cap at 60 seconds
                         logger.info(f"Waiting {retry_delay}s before retry...")
                         time.sleep(retry_delay)
                         continue
@@ -77,7 +101,7 @@ class GeminiService:
                         'error': 'QUOTA_EXCEEDED',
                         'quota_error': True,
                         'original_error': error_str,
-                        'help_message': 'Daily API quota exceeded. Please upgrade billing or try again tomorrow.'
+                        'help_message': 'API rate limit or quota exceeded. Please check your OpenAI account limits or try again later.'
                     }
                 
                 # For other errors, use exponential backoff
@@ -88,7 +112,7 @@ class GeminiService:
                     continue
                 
                 # Final attempt failed
-                logger.error(f"Gemini API error after all retries: {error_str}")
+                logger.error(f"OpenAI API error after all retries: {error_str}")
                 return {
                     'success': False,
                     'content': None,
@@ -96,13 +120,17 @@ class GeminiService:
                     'processing_time': processing_time,
                     'error': error_str
                 }
+        return {
+            'success': False,
+            'error': 'Unexpected termination of generation loop'
+        }
 
 
 class QuizGenerator:
     """Service for generating quiz questions"""
     
     def __init__(self):
-        self.gemini = GeminiService()
+        self.openai = OpenAIService()
     
     def generate_quiz(self, content: str, language: str = 'en', 
                      num_questions: int = 10, difficulty: str = 'medium',
@@ -133,7 +161,7 @@ class QuizGenerator:
             content, language, num_questions, difficulty, question_types, question_type_counts
         )
         # Generate content
-        result = self.gemini.generate_content(prompt)
+        result = self.openai.generate_content(prompt)
         
         if result['success']:
             try:
@@ -311,7 +339,7 @@ Example of CORRECT format:
         return prompt.strip()
     
     def _parse_quiz_response(self, response: str) -> Dict[str, Any]:
-        """Parse the quiz response from Gemini with improved error handling"""
+        """Parse the quiz response from OpenAI with improved error handling"""
         try:
             # Clean the response - remove markdown code fences if present
             cleaned_response = response.strip()
@@ -348,8 +376,7 @@ Example of CORRECT format:
             return quiz_data
             
         except (json.JSONDecodeError, ValueError) as e:
-            logger.error(f"Failed to parse quiz JSON: {str(e)}")
-            print(f"Failed to parse quiz JSON: {str(e)}")
+            logger.exception("Failed to parse quiz JSON")
             # Create a fallback quiz instead of failing
             return self._create_fallback_quiz(response)
     
@@ -481,8 +508,9 @@ Example of CORRECT format:
         
         return {
             'success': True,
-            'title': 'Generated Quiz',
-            'description': 'AI-generated quiz from course materials',
+            'is_fallback': True,
+            'title': 'Generated Quiz (Fallback)',
+            'description': 'This quiz was generated using local patterns because the AI service was unavailable or returned an invalid format.',
             'questions': questions,
             'total_points': len(questions),
             'estimated_duration': '15 minutes',
@@ -588,7 +616,7 @@ class ExamGenerator:
     """Service for generating exam content"""
     
     def __init__(self):
-        self.gemini = GeminiService()
+        self.openai = OpenAIService()
         self.quiz_generator = QuizGenerator()
     
     def generate_exam(self, content: str, language: str = 'en',
@@ -708,7 +736,7 @@ class SyllabusGenerator:
     """Service for generating course syllabi"""
     
     def __init__(self):
-        self.gemini = GeminiService()
+        self.openai = OpenAIService()
     
     def generate_syllabus(self, course_info: Dict[str, str], 
                          language: str = 'en') -> Dict[str, Any]:
@@ -723,7 +751,7 @@ class SyllabusGenerator:
             Dict containing generated syllabus data
         """
         prompt = self._create_syllabus_prompt(course_info, language)
-        result = self.gemini.generate_content(prompt)
+        result = self.openai.generate_content(prompt)
         
         if result['success']:
             try:
@@ -778,7 +806,7 @@ Format the output as JSON with clear structure.
         return prompt.strip()
     
     def _parse_syllabus_response(self, response: str) -> Dict[str, Any]:
-        """Parse syllabus response from Gemini"""
+        """Parse syllabus response from OpenAI"""
         try:
             # Try to extract JSON from the response
             start_idx = response.find('{')
@@ -813,7 +841,7 @@ class ContentAnalyzer:
     """Service for analyzing uploaded content"""
     
     def __init__(self):
-        self.gemini = GeminiService()
+        self.openai = OpenAIService()
     
     def analyze_content(self, content: str, analysis_type: str = 'summary') -> Dict[str, Any]:
         """
@@ -853,7 +881,7 @@ Provide a summary that includes:
 Format as JSON.
 """
         
-        result = self.gemini.generate_content(prompt)
+        result = self.openai.generate_content(prompt)
         return result
     
     def _extract_topics(self, content: str) -> Dict[str, Any]:
@@ -873,7 +901,7 @@ Identify:
 Format as a JSON list of topics with categories.
 """
         
-        result = self.gemini.generate_content(prompt)
+        result = self.openai.generate_content(prompt)
         return result
     
     def _assess_difficulty(self, content: str) -> Dict[str, Any]:
@@ -894,5 +922,5 @@ Provide assessment including:
 Format as JSON.
 """
         
-        result = self.gemini.generate_content(prompt)
+        result = self.openai.generate_content(prompt)
         return result
