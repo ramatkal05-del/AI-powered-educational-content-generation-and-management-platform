@@ -1,0 +1,35 @@
+# =============================================================================
+# RENDER.COM DEPLOYMENT CONFIGURATION
+# =============================================================================
+# This file configures your Render service automatically.
+# Place this file in the root of your repository.
+# Render will automatically detect and use this configuration.
+# =============================================================================
+
+services:
+  - type: web
+    name: didactai
+    env: python
+    pythonVersion: "3.11"
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn didactia_project.asgi --worker-class=uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT
+    plan: free
+    
+    # Environment variables (add your secrets in Render dashboard)
+    envVars:
+      - key: SECRET_KEY
+        generateValue: true
+      - key: DEBUG
+        value: "False"
+      - key: ALLOWED_HOSTS
+        value: "didactai.onrender.com"
+      - key: RENDER_DISK_PATH
+        value: "/opt/render/project/render/src"
+      - key: DATABASE_URL
+        # DATABASE_URL will be auto-provided when you add a PostgreSQL service
+        sync: false
+
+# To add a PostgreSQL database:
+# 1. Go to Render Dashboard > New > PostgreSQL
+# 2. Create a database
+# 3. The DATABASE_URL will be automatically injected to your web service
